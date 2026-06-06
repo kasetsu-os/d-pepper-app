@@ -1,4 +1,6 @@
-const MODEL = "gemini-2.5-flash";
+export const config = {
+  maxDuration: 30,
+};
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -15,11 +17,11 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "prompt is required" });
   }
 
+  const MODEL = "gemini-2.5-flash";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
 
-  let geminiRes;
   try {
-    geminiRes = await fetch(url, {
+    const geminiRes = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -27,26 +29,38 @@ export default async function handler(req, res) {
         generationConfig: {
           temperature: 0.4,
           topP: 0.9,
-          maxOutputTokens: 600,
+          maxOutputTokens: 1000,
         },
       }),
     });
+
+    if (!geminiRes.ok) {
+      const errBody = await geminiRes.json().catch(() => ({}));
+      const message = errBody?.error?.message ?? "(no message)";
+      const status = errBody?.error?.status ?? geminiRes.status;
+      return res.status(geminiRes.status).json({
+        error: `Gemini API error: ${geminiRes.status} ${status} – ${message}`,
+      });
+    }
+
+    const data = await geminiRes.json();
+
+    if (!data.candidates || data.candidates.length === 0) {
+      return res.status(500).json({ error: "Gemini response has no candidates" });
+    }
+
+    const parts = data.candidates[0]?.content?.parts;
+    if (!parts || parts.length === 0) {
+      return res.status(500).json({ error: "Gemini response has no content parts" });
+    }
+
+    const text = parts[0]?.text;
+    if (!text) {
+      return res.status(500).json({ error: "Gemini response text is empty" });
+    }
+
+    return res.status(200).json({ text });
   } catch (err) {
-    return res.status(502).json({ error: "Failed to reach Gemini API" });
+    return res.status(500).json({ error: err.message ?? "Unknown error" });
   }
-
-  if (!geminiRes.ok) {
-    const errBody = await geminiRes.json().catch(() => ({}));
-    const message = errBody?.error?.message ?? "(no message)";
-    return res.status(geminiRes.status).json({ error: `Gemini API error: ${message}` });
-  }
-
-  const data = await geminiRes.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-  if (!text) {
-    return res.status(500).json({ error: "Gemini response has no text" });
-  }
-
-  return res.status(200).json({ text });
 }
