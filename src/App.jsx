@@ -38,53 +38,63 @@ const ENTRIES = [
 /* 出口ボタン定義（URL は仮置き・フェーズ2で本接続） */
 const EXIT_BUTTONS = {
   "髪の悩み": [
-    { label: "予約ページへ進む", url: "https://beauty.hotpepper.jp/slnH000166332/" },
-    { label: "電話で相談する",   url: "tel:0888023370" },
-    { label: "もう少し相談する", action: "more" },
+    { label: "もう少し相談する",              action: "more" },
+    { label: "来店時に伝えるメモを見る",      action: "history" },
+    { label: "この内容で相談予約へ進む",      url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "電話で相談する",               url: "tel:0888023370" },
   ],
   "頭皮の悩み": [
-    { label: "予約する",                           url: "https://beauty.hotpepper.jp/slnH000166332/" },
-    { label: "Da-isエステシャンプーについて見る",  url: "#shampoo" },
-    { label: "もう少し相談する",                   action: "more" },
+    { label: "もう少し相談する",              action: "more" },
+    { label: "来店時に伝えるメモを見る",      action: "history" },
+    { label: "この内容で相談予約へ進む",      url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "電話で相談する",               url: "tel:0888023370" },
+  ],
+  "ダメージ・手触り相談": [
+    { label: "もう少し相談する",              action: "more" },
+    { label: "来店時に伝えるメモを見る",      action: "history" },
+    { label: "この内容で相談予約へ進む",      url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "電話で相談する",               url: "tel:0888023370" },
   ],
   "疲れ・気分・リラックス": [
-    { label: "Da-isエステシャンプーについて見る",  url: "#shampoo" },
-    { label: "予約する",                           url: "https://beauty.hotpepper.jp/slnH000166332/" },
-    { label: "noteを見る",                         url: "https://note.com/da_is1119" },
+    { label: "もう少し相談する",              action: "more" },
+    { label: "来店時に伝えるメモを見る",      action: "history" },
+    { label: "この内容で相談予約へ進む",      url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "noteを見る",                   url: "https://note.com/da_is1119" },
   ],
   "美容室選びの不安": [
-    { label: "noteを見る",       url: "https://note.com/da_is1119" },
-    { label: "Instagramを見る",  url: "#instagram" },
-    { label: "予約する",         url: "https://beauty.hotpepper.jp/slnH000166332/" },
-    { label: "もう少し相談する", action: "more" },
+    { label: "もう少し相談する",              action: "more" },
+    { label: "来店時に伝えるメモを見る",      action: "history" },
+    { label: "この内容で相談予約へ進む",      url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "電話で相談する",               url: "tel:0888023370" },
   ],
   "メニュー・予約前の迷い": [
-    { label: "予約ページへ進む", url: "https://beauty.hotpepper.jp/slnH000166332/" },
-    { label: "電話で相談する",   url: "tel:0888023370" },
-    { label: "もう少し相談する", action: "more" },
+    { label: "もう少し相談する",              action: "more" },
+    { label: "来店時に伝えるメモを見る",      action: "history" },
+    { label: "この内容で相談予約へ進む",      url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "電話で相談する",               url: "tel:0888023370" },
   ],
   "商品相談": [
-    { label: "商品を見る",       url: "#products" },
-    { label: "電話で相談する",   url: "tel:0888023370" },
-    { label: "もう少し相談する", action: "more" },
+    { label: "もう少し相談する",              action: "more" },
+    { label: "来店時に伝えるメモを見る",      action: "history" },
+    { label: "この内容で相談予約へ進む",      url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "電話で相談する",               url: "tel:0888023370" },
   ],
   "美容師・見学希望": [
-    { label: "Instagramを見る",    url: "#instagram" },
-    { label: "noteを見る",         url: "https://note.com/da_is1119" },
-    { label: "電話で問い合わせる", url: "tel:0888023370" },
-    /* 採用ページURL確定後に追加: { label: "採用ページを見る", url: "https://peraichi.com/..." } */
+    { label: "Instagramを見る",              url: "https://www.instagram.com/dais.kochi/" },
+    { label: "noteを見る",                   url: "https://note.com/da_is1119" },
+    { label: "電話で問い合わせる",           url: "tel:0888023370" },
   ],
   "円形脱毛症の相談": [
-    { label: "美容室で相談する",                   url: "https://beauty.hotpepper.jp/slnH000166332/" },
-    { label: "頭皮に配慮した施術相談",             url: "#scalp" },
-    { label: "髪型・分け目・カバー方法を相談する", url: "https://beauty.hotpepper.jp/slnH000166332/" },
-    { label: "Da-isエステシャンプーについて見る",  url: "#shampoo" },
+    { label: "もう少し相談する",              action: "more" },
+    { label: "来店時に伝えるメモを見る",      action: "history" },
+    { label: "この内容で相談予約へ進む",      url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "電話で相談する",               url: "tel:0888023370" },
   ],
   "薄毛・抜け毛の相談": [
-    { label: "美容室で相談する",                   url: "https://beauty.hotpepper.jp/slnH000166332/" },
-    { label: "髪型・分け目・カバー方法を相談する", url: "https://beauty.hotpepper.jp/slnH000166332/" },
-    { label: "頭皮に配慮した施術相談",             url: "#scalp" },
-    { label: "Da-isエステシャンプーについて見る",  url: "#shampoo" },
+    { label: "もう少し相談する",              action: "more" },
+    { label: "来店時に伝えるメモを見る",      action: "history" },
+    { label: "この内容で相談予約へ進む",      url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "電話で相談する",               url: "tel:0888023370" },
   ],
 };
 
@@ -278,7 +288,7 @@ function SocialIcon({ type }) {
 }
 
 const SOCIAL_LINKS = [
-  { href: "#instagram",                                              label: "Instagram", icon: "instagram" },
+  { href: "https://www.instagram.com/dais.kochi/",                   label: "Instagram", icon: "instagram" },
   { href: "https://note.com/da_is1119",                             label: "note",      icon: "note"      },
   { href: "https://maps.app.goo.gl/tGN2uWxBTaUXydMx8?g_st=ic",    label: "Google",    icon: "map"       },
   { href: "#homepage",                                               label: "HP",        icon: "globe"     },
@@ -309,6 +319,13 @@ function App() {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(consultations));
   }, [consultations]);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    if (input) el.style.height = el.scrollHeight + "px";
+  }, [input]);
 
   const currentEntry = useMemo(
     () => ENTRIES.find((e) => e.id === selectedEntry),
@@ -493,11 +510,11 @@ function App() {
         {!selectedEntry && (
           <section className="home-view">
             <div className="hero">
-              <h1>ご来店、ありがとうございます</h1>
+              <h1>Da-isの相談所へようこそ。</h1>
               <div className="deco-line">
                 <span className="deco-diamond" />
               </div>
-              <p>今日はどのようなご相談ですか？</p>
+              <p>髪や頭皮の悩みを、来店前に少し言葉にしてみませんか。</p>
             </div>
             <div className="entry-list">
               {ENTRIES.map((entry) => (
@@ -555,6 +572,11 @@ function App() {
               <h2>{currentEntry.label}</h2>
               <p className="consult-sub">{currentEntry.sub}</p>
               <form onSubmit={handleSubmit}>
+                <p className="textarea-helper">
+                  {isContinuing
+                    ? "続きを書いてください。うまくまとまっていなくても大丈夫です。"
+                    : "今、気になっていることをそのまま書いてください。うまくまとまっていなくても大丈夫です。"}
+                </p>
                 <textarea
                   ref={textareaRef}
                   value={input}
@@ -563,7 +585,7 @@ function App() {
                     ? "続きを書いてください。\n例：もう少し詳しくいうと、前髪の扱いに迷っています。"
                     : "例：最近、分け目の地肌が気になっています。"
                   }
-                  rows={6}
+                  rows={8}
                 />
 
                 {/* 参考画像・URLセクション（リクルート入口では非表示） */}
@@ -603,7 +625,7 @@ function App() {
                         <circle cx="8.5" cy="10" r="1.5" />
                         <path d="m3 17 5-5 3.5 3.5 3-3 5 5" />
                       </svg>
-                      <span>参考画像を添付する{attachedImages.length > 0 ? `（${attachedImages.length}/3）` : "（最大3枚）"}</span>
+                      <span>自分の髪の状態を記録する{attachedImages.length > 0 ? `（${attachedImages.length}/3）` : "（任意・最大3枚）"}</span>
                     </button>
                   )}
                   <div className="url-input-area">
@@ -636,10 +658,11 @@ function App() {
                   </div>
                   <p className="ref-section-note">
                     参考画像・URLがあれば追加できます。ヘアスタイル、ヘアカラー、髪の状態などを相談の参考にします。<br />
-                    ※店舗へ自動送信されるものではありません。実際に確認が必要な場合は、ご予約時・お電話・ご来店時にお見せください。
+                    実際に確認が必要な場合は、ご予約時・お電話・ご来店時にお見せください。
                   </p>
                 </div>}
 
+                <p className="send-note">この相談内容や写真は、現在、店舗スタッフへ自動送信されません。</p>
                 <button type="submit" className="submit-button">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M22 2 11 13" /><path d="m22 2-7 20-4-9-9-4 20-7Z" />
@@ -754,6 +777,15 @@ function App() {
                                       el.scrollIntoView({ behavior: "smooth", block: "center" });
                                       el.focus();
                                     }}
+                                  >
+                                    {btn.label}
+                                  </button>
+                                ) : btn.action === "history" ? (
+                                  <button
+                                    key={i}
+                                    type="button"
+                                    className="exit-btn exit-btn--history"
+                                    onClick={() => setHistoryOpen(true)}
                                   >
                                     {btn.label}
                                   </button>

@@ -371,16 +371,25 @@ body {
 .consult-card h2 { font-family: 'Noto Serif JP', serif; font-size: 17px; font-weight: 400; color: var(--text-dark); letter-spacing: 0.08em; margin-bottom: 6px; }
 .consult-sub { font-size: 12px; font-weight: 300; color: var(--text-light); letter-spacing: 0.08em; margin-bottom: 20px; }
 
+.textarea-helper {
+  font-size: 12px; font-weight: 300; color: var(--text-light);
+  line-height: 1.85; letter-spacing: 0.04em; margin-bottom: 10px;
+}
 .consult-card textarea {
-  width: 100%; min-height: 148px; padding: 16px;
+  width: 100%; min-height: 200px; padding: 16px;
   background: rgba(255,255,255,0.58); border: 1px solid rgba(184,149,90,0.20);
   border-radius: 12px; font-family: 'Noto Sans JP', sans-serif;
   font-size: 14px; font-weight: 300; color: var(--text-dark);
-  letter-spacing: 0.04em; line-height: 1.85; resize: none; outline: none;
+  letter-spacing: 0.04em; line-height: 1.85; resize: none; outline: none; overflow: hidden;
   transition: border-color 0.25s, background 0.25s; margin-bottom: 14px; display: block;
 }
 .consult-card textarea:focus { border-color: rgba(184,149,90,0.48); background: rgba(255,255,255,0.82); }
 .consult-card textarea::placeholder { color: var(--text-light); }
+.send-note {
+  font-size: 11px; font-weight: 300; color: var(--text-light);
+  letter-spacing: 0.04em; line-height: 1.8; text-align: center;
+  margin-bottom: 10px;
+}
 
 .submit-button {
   display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -492,6 +501,16 @@ body {
   background: rgba(160,148,136,0.10);
   border-color: rgba(160,148,136,0.60);
   color: var(--text-mid);
+}
+.exit-btn--history {
+  border-color: rgba(184,149,90,0.30);
+  background: rgba(184,149,90,0.06);
+  color: var(--text-mid);
+}
+.exit-btn--history:hover {
+  background: rgba(184,149,90,0.12);
+  border-color: rgba(184,149,90,0.50);
+  color: var(--text-dark);
 }
 
 /* ─── 画像添付 ─── */
