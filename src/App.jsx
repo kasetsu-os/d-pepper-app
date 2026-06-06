@@ -40,43 +40,43 @@ const EXIT_BUTTONS = {
   "髪の悩み": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
-    { label: "この内容で相談予約へ進む",      url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "Da-isの予約ページを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/" },
     { label: "電話で相談する",               url: "tel:0888023370" },
   ],
   "頭皮の悩み": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
-    { label: "この内容で相談予約へ進む",      url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "Da-isの予約ページを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/" },
     { label: "電話で相談する",               url: "tel:0888023370" },
   ],
   "ダメージ・手触り相談": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
-    { label: "この内容で相談予約へ進む",      url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "Da-isの予約ページを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/" },
     { label: "電話で相談する",               url: "tel:0888023370" },
   ],
   "疲れ・気分・リラックス": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
-    { label: "この内容で相談予約へ進む",      url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "Da-isの予約ページを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/" },
     { label: "noteを見る",                   url: "https://note.com/da_is1119" },
   ],
   "美容室選びの不安": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
-    { label: "この内容で相談予約へ進む",      url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "Da-isの予約ページを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/" },
     { label: "電話で相談する",               url: "tel:0888023370" },
   ],
   "メニュー・予約前の迷い": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
-    { label: "この内容で相談予約へ進む",      url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "Da-isの予約ページを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/" },
     { label: "電話で相談する",               url: "tel:0888023370" },
   ],
   "商品相談": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
-    { label: "この内容で相談予約へ進む",      url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "Da-isの予約ページを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/" },
     { label: "電話で相談する",               url: "tel:0888023370" },
   ],
   "美容師・見学希望": [
@@ -87,13 +87,13 @@ const EXIT_BUTTONS = {
   "円形脱毛症の相談": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
-    { label: "この内容で相談予約へ進む",      url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "Da-isの予約ページを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/" },
     { label: "電話で相談する",               url: "tel:0888023370" },
   ],
   "薄毛・抜け毛の相談": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
-    { label: "この内容で相談予約へ進む",      url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "Da-isの予約ページを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/" },
     { label: "電話で相談する",               url: "tel:0888023370" },
   ],
 };
@@ -601,6 +601,14 @@ function App() {
                   rows={8}
                 />
 
+                <p className="send-note">この相談内容や写真は、現在、店舗スタッフへ自動送信されません。</p>
+                <button type="submit" className="submit-button">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M22 2 11 13" /><path d="m22 2-7 20-4-9-9-4 20-7Z" />
+                  </svg>
+                  <span>相談・記録する</span>
+                </button>
+
                 {/* 参考画像・URLセクション（リクルート入口では非表示） */}
                 {currentEntry.id !== "stylist" && <div className="ref-section">
                   <div className="ref-section-header">参考画像・URL<span className="ref-section-opt">（任意）</span></div>
@@ -677,13 +685,6 @@ function App() {
                   </p>
                 </div>}
 
-                <p className="send-note">この相談内容や写真は、現在、店舗スタッフへ自動送信されません。</p>
-                <button type="submit" className="submit-button">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M22 2 11 13" /><path d="m22 2-7 20-4-9-9-4 20-7Z" />
-                  </svg>
-                  <span>相談・記録する</span>
-                </button>
               </form>
               {lastResult && (
                 <div className="result-card" ref={resultCardRef}>
@@ -774,47 +775,54 @@ function App() {
                       </div>
                       {(() => {
                         const btns = EXIT_BUTTONS[lastResult.category] ?? EXIT_BUTTONS["髪の悩み"];
+                        const moreBtns    = btns.filter(b => b.action === "more");
+                        const historyBtns = btns.filter(b => b.action === "history");
+                        const urlBtns     = btns.filter(b => b.url);
                         return (
                           <div className="exit-buttons">
                             <span className="exit-buttons-label">ご案内</span>
                             <div className="exit-btn-list">
-                              {btns.map((btn, i) =>
-                                btn.action === "more" ? (
-                                  <button
-                                    key={i}
-                                    type="button"
-                                    className="exit-btn exit-btn--more"
-                                    onClick={() => {
-                                      setInput("");
-                                      setIsContinuing(true);
-                                      const el = textareaRef.current;
-                                      if (!el) return;
-                                      el.scrollIntoView({ behavior: "smooth", block: "center" });
-                                      el.focus();
-                                    }}
-                                  >
-                                    {btn.label}
-                                  </button>
-                                ) : btn.action === "history" ? (
-                                  <button
-                                    key={i}
-                                    type="button"
-                                    className="exit-btn exit-btn--history"
-                                    onClick={() => setHistoryOpen(true)}
-                                  >
-                                    {btn.label}
-                                  </button>
-                                ) : (
-                                  <a
-                                    key={i}
-                                    href={btn.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="exit-btn"
-                                  >
-                                    {btn.label}
-                                  </a>
-                                )
+                              {moreBtns.map((btn, i) => (
+                                <button
+                                  key={`more-${i}`}
+                                  type="button"
+                                  className="exit-btn exit-btn--primary"
+                                  onClick={() => {
+                                    setInput("");
+                                    setIsContinuing(true);
+                                    const el = textareaRef.current;
+                                    if (!el) return;
+                                    el.scrollIntoView({ behavior: "smooth", block: "center" });
+                                    el.focus();
+                                  }}
+                                >
+                                  {btn.label}
+                                </button>
+                              ))}
+                              {historyBtns.map((btn, i) => (
+                                <button
+                                  key={`hist-${i}`}
+                                  type="button"
+                                  className="exit-btn exit-btn--history"
+                                  onClick={() => setHistoryOpen(true)}
+                                >
+                                  {btn.label}
+                                </button>
+                              ))}
+                              {urlBtns.length > 0 && (
+                                <div className="exit-btn-url-row">
+                                  {urlBtns.map((btn, i) => (
+                                    <a
+                                      key={`url-${i}`}
+                                      href={btn.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="exit-btn"
+                                    >
+                                      {btn.label}
+                                    </a>
+                                  ))}
+                                </div>
                               )}
                             </div>
                           </div>

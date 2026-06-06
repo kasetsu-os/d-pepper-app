@@ -9,9 +9,12 @@ import {
 
 export function buildDpepperPrompt({ text, category, group, summary, guidance, entryTitle, isContinuing = false }) {
   const categoryRulesParts = [];
-  if (group.includes("頭皮")) categoryRulesParts.push(scalpRules);
-  if (group.includes("ケア")) categoryRulesParts.push(careRules);
-  if (group.includes("デザイン")) categoryRulesParts.push(designRules);
+  const appliedRuleNames = ["commonRules", "bannedPhrases", "preferredPhrases"];
+  if (group.includes("頭皮"))   { categoryRulesParts.push(scalpRules);  appliedRuleNames.push("scalpRules"); }
+  if (group.includes("ケア"))   { categoryRulesParts.push(careRules);   appliedRuleNames.push("careRules"); }
+  if (group.includes("デザイン")) { categoryRulesParts.push(designRules); appliedRuleNames.push("designRules"); }
+  console.log("Dペッパー applied rules:", appliedRuleNames.join(", "));
+  console.log("Dペッパー group:", group, "/ category:", category, "/ isContinuing:", isContinuing);
   const categoryRulesText = categoryRulesParts.join("\n\n");
 
   return `【前提・役割】

@@ -473,10 +473,13 @@ body {
   font-weight: 400; margin-bottom: 10px; text-transform: uppercase;
 }
 .exit-btn-list {
-  display: flex; flex-wrap: wrap; gap: 8px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.exit-btn-url-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
 }
 .exit-btn {
-  display: inline-flex; align-items: center;
+  display: inline-flex; align-items: center; justify-content: center;
   padding: 8px 16px;
   border: 1px solid rgba(184,149,90,0.45);
   border-radius: var(--radius-pill);
@@ -492,24 +495,31 @@ body {
   border-color: var(--gold);
   color: var(--gold);
 }
-.exit-btn--more {
-  border-color: rgba(160,148,136,0.38);
-  background: transparent;
-  color: var(--text-light);
+/* 主ボタン：もう少し相談する */
+.exit-btn--primary {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 13px; font-weight: 500; letter-spacing: 0.12em;
+  background: linear-gradient(135deg, #9a7432 0%, #b8893e 100%);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 3px 14px rgba(154,116,50,0.32);
 }
-.exit-btn--more:hover {
-  background: rgba(160,148,136,0.10);
-  border-color: rgba(160,148,136,0.60);
-  color: var(--text-mid);
+.exit-btn--primary:hover {
+  background: linear-gradient(135deg, #b8893e 0%, #c8993e 100%);
+  border-color: transparent;
+  color: #fff;
 }
+/* 履歴ボタン */
 .exit-btn--history {
-  border-color: rgba(184,149,90,0.30);
+  width: 100%;
+  border-color: rgba(184,149,90,0.35);
   background: rgba(184,149,90,0.06);
   color: var(--text-mid);
 }
 .exit-btn--history:hover {
   background: rgba(184,149,90,0.12);
-  border-color: rgba(184,149,90,0.50);
+  border-color: rgba(184,149,90,0.55);
   color: var(--text-dark);
 }
 
