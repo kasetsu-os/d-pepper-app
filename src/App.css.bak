@@ -1,0 +1,415 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Serif+JP:wght@300;400;500&family=Noto+Sans+JP:wght@300;400&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --cream:        #f4efe9;
+  --card-bg:      rgba(255, 253, 249, 0.82);
+  --gold:         #B8965A;
+  --gold-light:   #d4b07a;
+  --gold-pale:    rgba(184, 149, 90, 0.12);
+  --gold-soft:    rgba(184, 150, 90, 0.18);
+  --text-dark:    #35271e;
+  --text-mid:     #6b5444;
+  --text-light:   #9c8270;
+  --shadow-sm:    0 2px 16px rgba(90, 55, 20, 0.07);
+  --shadow-md:    0 6px 40px rgba(90, 55, 20, 0.12);
+  --radius-card:  18px;
+  --radius-pill:  100px;
+  --icon-first:   #8A9A72;
+  --icon-regular: #B88478;
+  --icon-stylist: #A77A32;
+}
+
+body {
+  background: #f5f0eb;
+  font-family: "Noto Serif JP", serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── 画面・背景・中身 ─── */
+.画面 {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.18) 28%, transparent 55%),
+    radial-gradient(circle at 70% 35%, rgba(255,255,255,0.22) 0%, transparent 50%),
+    linear-gradient(180deg, #f7f2ed 0%, #f4efe9 100%);
+}
+
+.背景 {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.中身 {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ─── 左上の布 ─── */
+.背景_布 {
+  position: absolute;
+  top: -40px;
+  left: -90px;
+  width: 520px;
+  height: 520px;
+  border-radius: 45% 55% 55% 45%;
+  opacity: 0.9;
+  transform: rotate(-8deg);
+  filter: drop-shadow(0 20px 30px rgba(120, 96, 70, 0.08));
+  background:
+    radial-gradient(ellipse at 42% 38%, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.34) 34%, rgba(233,224,214,0.72) 68%, rgba(217,205,193,0.92) 100%);
+}
+.背景_布::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0.5;
+  background:
+    repeating-linear-gradient(
+      35deg,
+      rgba(140,118,94,0.06) 0px,
+      rgba(140,118,94,0.06) 1px,
+      transparent 1px,
+      transparent 6px
+    ),
+    repeating-linear-gradient(
+      -35deg,
+      rgba(255,255,255,0.22) 0px,
+      rgba(255,255,255,0.22) 1px,
+      transparent 1px,
+      transparent 7px
+    );
+  mix-blend-mode: multiply;
+}
+.背景_布::after {
+  content: "";
+  position: absolute;
+  left: 40px;
+  top: 50px;
+  width: 430px;
+  height: 430px;
+  border-radius: 50% 40% 58% 42%;
+  background:
+    radial-gradient(circle at 36% 32%, rgba(255,255,255,0.52) 0%, transparent 40%),
+    radial-gradient(circle at 68% 72%, rgba(120,96,70,0.08) 0%, transparent 38%);
+  opacity: 0.85;
+}
+
+/* ─── 左下の草影 ─── */
+.背景_草 {
+  position: absolute;
+  left: -10px;
+  bottom: -10px;
+  width: 300px;
+  height: 320px;
+  opacity: 0.3;
+  filter: blur(0.3px);
+}
+.背景_草::before,
+.背景_草::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+}
+.背景_草::before {
+  background-image:
+    linear-gradient(72deg, transparent 48%, rgba(125,110,95,0.55) 49%, rgba(125,110,95,0.55) 51%, transparent 52%),
+    linear-gradient(56deg, transparent 48%, rgba(125,110,95,0.42) 49%, rgba(125,110,95,0.42) 51%, transparent 52%),
+    linear-gradient(37deg, transparent 48%, rgba(125,110,95,0.35) 49%, rgba(125,110,95,0.35) 51%, transparent 52%),
+    radial-gradient(ellipse 18px 42px at 88px 228px, rgba(125,110,95,0.34) 0%, rgba(125,110,95,0.34) 52%, transparent 54%),
+    radial-gradient(ellipse 14px 34px at 114px 182px, rgba(125,110,95,0.28) 0%, rgba(125,110,95,0.28) 50%, transparent 53%),
+    radial-gradient(ellipse 15px 36px at 146px 210px, rgba(125,110,95,0.24) 0%, rgba(125,110,95,0.24) 50%, transparent 53%),
+    radial-gradient(ellipse 12px 28px at 170px 156px, rgba(125,110,95,0.24) 0%, rgba(125,110,95,0.24) 50%, transparent 53%),
+    radial-gradient(ellipse 12px 30px at 55px 250px, rgba(125,110,95,0.26) 0%, rgba(125,110,95,0.26) 50%, transparent 53%),
+    radial-gradient(ellipse 10px 24px at 210px 250px, rgba(125,110,95,0.22) 0%, rgba(125,110,95,0.22) 50%, transparent 53%);
+  background-size:
+    180px 260px,
+    130px 220px,
+    110px 180px,
+    36px 84px,
+    28px 68px,
+    30px 72px,
+    24px 56px,
+    24px 60px,
+    20px 48px;
+  background-position:
+    0 40px,
+    40px 70px,
+    90px 110px,
+    0 0,
+    0 0,
+    0 0,
+    0 0,
+    0 0,
+    0 0;
+}
+.背景_草::after {
+  background-image:
+    radial-gradient(circle at 78px 235px,  rgba(125,110,95,0.35) 0 2px, transparent 3px),
+    radial-gradient(circle at 88px 220px,  rgba(125,110,95,0.35) 0 2px, transparent 3px),
+    radial-gradient(circle at 98px 208px,  rgba(125,110,95,0.35) 0 2px, transparent 3px),
+    radial-gradient(circle at 108px 198px, rgba(125,110,95,0.35) 0 2px, transparent 3px),
+    radial-gradient(circle at 160px 210px, rgba(125,110,95,0.28) 0 2px, transparent 3px),
+    radial-gradient(circle at 170px 198px, rgba(125,110,95,0.28) 0 2px, transparent 3px),
+    radial-gradient(circle at 180px 186px, rgba(125,110,95,0.28) 0 2px, transparent 3px),
+    radial-gradient(circle at 52px 270px,  rgba(125,110,95,0.24) 0 2px, transparent 3px),
+    radial-gradient(circle at 62px 258px,  rgba(125,110,95,0.24) 0 2px, transparent 3px),
+    radial-gradient(circle at 72px 246px,  rgba(125,110,95,0.24) 0 2px, transparent 3px);
+}
+
+/* ─── 右側の金の円弧 ─── */
+.背景_円弧 {
+  position: absolute;
+  right: -150px;
+  top: 40px;
+  width: 560px;
+  height: 760px;
+  opacity: 0.9;
+}
+.背景_円弧::before,
+.背景_円弧::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  border: 1.2px solid rgba(192, 156, 94, 0.45);
+}
+.背景_円弧::before {
+  right: 0; top: 0;
+  width: 520px; height: 720px;
+}
+.背景_円弧::after {
+  right: 55px; top: 35px;
+  width: 430px; height: 640px;
+}
+.背景_円弧 span {
+  position: absolute;
+  right: 105px; top: 82px;
+  width: 340px; height: 560px;
+  border-radius: 50%;
+  border: 1px solid rgba(192, 156, 94, 0.28);
+}
+
+/* ─── 右上のドット ─── */
+.背景_ドット {
+  position: absolute;
+  right: 120px; top: 255px;
+  width: 120px; height: 90px;
+  opacity: 0.75;
+  background-image: radial-gradient(circle, rgba(198,157,93,0.85) 1.4px, transparent 1.5px);
+  background-size: 16px 16px;
+}
+
+.app-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 36px;
+  border-bottom: 1px solid rgba(184,149,90,0.14);
+  background: rgba(244,239,233,0.72);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.brand { display: flex; align-items: baseline; }
+.brand-main {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px; font-weight: 400;
+  letter-spacing: 0.06em; color: var(--text-dark);
+}
+.brand-sub {
+  font-size: 12px; font-weight: 300;
+  letter-spacing: 0.22em; color: var(--text-mid); margin-left: 10px;
+}
+.history-button {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 18px;
+  border: 1px solid rgba(184,149,90,0.38); border-radius: var(--radius-pill);
+  background: rgba(255,255,255,0.65); backdrop-filter: blur(6px);
+  color: var(--text-mid); font-family: 'Noto Sans JP', sans-serif;
+  font-size: 13px; font-weight: 300; letter-spacing: 0.14em;
+  cursor: pointer; transition: all 0.28s ease;
+}
+.history-button:hover { background: rgba(255,255,255,0.92); border-color: var(--gold); color: var(--gold); }
+.history-button svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.4; stroke-linecap: round; }
+.history-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--gold); color: #fff; font-size: 10px; letter-spacing: 0;
+}
+
+.main-area {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  padding: 56px 24px 80px; width: 100%; max-width: 660px; margin: 0 auto;
+}
+
+.home-view { width: 100%; }
+
+.hero { text-align: center; margin-bottom: 44px; animation: fadeUp 0.55s ease both; }
+.hero h1 {
+  font-family: 'Noto Serif JP', serif;
+  font-size: clamp(22px, 5vw, 34px); font-weight: 300;
+  color: var(--text-dark); letter-spacing: 0.10em; line-height: 1.45; margin-bottom: 18px;
+}
+.deco-line { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 14px; }
+.deco-line::before, .deco-line::after { content: ''; display: block; width: 52px; height: 1px; background: linear-gradient(to right, transparent, var(--gold-light)); }
+.deco-line::after { background: linear-gradient(to left, transparent, var(--gold-light)); }
+.deco-diamond { width: 6px; height: 6px; background: var(--gold-light); transform: rotate(45deg); flex-shrink: 0; }
+.hero p { font-size: 13px; font-weight: 300; color: var(--text-light); letter-spacing: 0.18em; }
+
+.entry-list { display: flex; flex-direction: column; gap: 14px; width: 100%; }
+.entry-card {
+  display: flex; align-items: center; gap: 18px; padding: 20px 22px;
+  background: var(--card-bg); border: 1px solid rgba(184,149,90,0.16);
+  border-radius: var(--radius-card); box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform 0.32s cubic-bezier(.25,.46,.45,.94), box-shadow 0.32s ease, border-color 0.28s ease;
+  position: relative; overflow: hidden; text-align: left; width: 100%;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.entry-card::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(130deg, rgba(255,255,255,0.38) 0%, transparent 55%);
+  opacity: 0; transition: opacity 0.28s;
+}
+.entry-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: rgba(184,149,90,0.32); }
+.entry-card:hover::before { opacity: 1; }
+.entry-card:nth-child(1) { animation: fadeUp 0.5s 0.08s ease both; }
+.entry-card:nth-child(2) { animation: fadeUp 0.5s 0.18s ease both; }
+.entry-card:nth-child(3) { animation: fadeUp 0.5s 0.28s ease both; }
+
+.entry-icon {
+  flex-shrink: 0; width: 58px; height: 58px; border-radius: 50%;
+  border: 1px solid rgba(184, 150, 90, 0.28);
+  background: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.95), rgba(250,247,244,0.72));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 6px 18px rgba(90, 60, 30, 0.08);
+  display: flex; align-items: center; justify-content: center; transition: all 0.28s ease;
+}
+.entry-card:hover .entry-icon { border-color: var(--gold-light); background: rgba(255,255,255,0.92); }
+.entry-icon svg { width: 26px; height: 26px; fill: none; stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; }
+
+/* アイコン色：入口ごと */
+.entry-card.first   .entry-icon svg { stroke: var(--icon-first); }
+.entry-card.regular .entry-icon svg { stroke: var(--icon-regular); }
+.entry-card.stylist .entry-icon svg { stroke: var(--icon-stylist); }
+.entry-card:hover   .entry-icon svg { opacity: 0.88; }
+
+.entry-text { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.entry-title { font-family: 'Noto Serif JP', serif; font-size: 18px; font-weight: 400; color: var(--text-dark); letter-spacing: 0.06em; }
+.entry-subtitle { font-size: 12px; font-weight: 300; color: var(--text-light); letter-spacing: 0.10em; }
+
+.entry-arrow {
+  flex-shrink: 0; width: 38px; height: 38px; border-radius: 50%;
+  border: 1px solid rgba(184,149,90,0.30);
+  display: flex; align-items: center; justify-content: center; transition: all 0.28s ease;
+}
+.entry-arrow svg { width: 15px; height: 15px; stroke: var(--gold); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.25s ease, stroke 0.25s ease; }
+.entry-card:hover .entry-arrow { background: var(--gold); border-color: var(--gold); }
+.entry-card:hover .entry-arrow svg { stroke: #fff; transform: translateX(1px); }
+
+.consult-view { width: 100%; animation: fadeUp 0.38s ease both; }
+
+.back-button {
+  display: inline-flex; align-items: center; gap: 6px; margin-bottom: 22px;
+  border: none; background: none; color: var(--text-light);
+  font-size: 13px; font-weight: 300; letter-spacing: 0.10em;
+  cursor: pointer; transition: color 0.2s;
+}
+.back-button:hover { color: var(--gold); }
+.back-button svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+.consult-card {
+  background: var(--card-bg); border: 1px solid rgba(184,149,90,0.16);
+  border-radius: 22px; padding: 32px 28px 28px;
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.consult-badge {
+  display: inline-flex; align-items: center; padding: 4px 14px;
+  background: var(--gold-pale); border: 1px solid rgba(184,149,90,0.24);
+  border-radius: var(--radius-pill); font-size: 11px; color: var(--gold);
+  letter-spacing: 0.14em; margin-bottom: 18px;
+}
+.consult-card h2 { font-family: 'Noto Serif JP', serif; font-size: 17px; font-weight: 400; color: var(--text-dark); letter-spacing: 0.08em; margin-bottom: 6px; }
+.consult-sub { font-size: 12px; font-weight: 300; color: var(--text-light); letter-spacing: 0.08em; margin-bottom: 20px; }
+
+.consult-card textarea {
+  width: 100%; min-height: 148px; padding: 16px;
+  background: rgba(255,255,255,0.58); border: 1px solid rgba(184,149,90,0.20);
+  border-radius: 12px; font-family: 'Noto Sans JP', sans-serif;
+  font-size: 14px; font-weight: 300; color: var(--text-dark);
+  letter-spacing: 0.04em; line-height: 1.85; resize: none; outline: none;
+  transition: border-color 0.25s, background 0.25s; margin-bottom: 14px; display: block;
+}
+.consult-card textarea:focus { border-color: rgba(184,149,90,0.48); background: rgba(255,255,255,0.82); }
+.consult-card textarea::placeholder { color: var(--text-light); }
+
+.submit-button {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 14px;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+  border: none; border-radius: var(--radius-pill); color: #fff;
+  font-family: 'Noto Sans JP', sans-serif; font-size: 14px; font-weight: 300;
+  letter-spacing: 0.22em; cursor: pointer;
+  transition: transform 0.28s ease, box-shadow 0.28s ease;
+  box-shadow: 0 4px 20px rgba(184,149,90,0.32);
+}
+.submit-button:hover { transform: translateY(-1px); box-shadow: 0 8px 32px rgba(184,149,90,0.46); }
+.submit-button svg { width: 15px; height: 15px; stroke: #fff; fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+
+.result-card {
+  margin-top: 20px; padding: 20px;
+  background: rgba(255,255,255,0.6); border: 1px solid rgba(184,149,90,0.20);
+  border-radius: 14px; animation: fadeUp 0.38s ease both;
+}
+.result-label { display: block; font-size: 10px; letter-spacing: 0.18em; color: var(--gold); margin-bottom: 6px; text-transform: uppercase; }
+.result-card h3 { font-family: 'Noto Serif JP', serif; font-size: 16px; font-weight: 400; color: var(--text-dark); margin-bottom: 8px; letter-spacing: 0.06em; }
+.result-card > p { font-size: 13px; font-weight: 300; color: var(--text-mid); line-height: 1.75; margin-bottom: 14px; }
+.next-action { padding: 12px 14px; background: var(--gold-pale); border-radius: 10px; border-left: 2px solid var(--gold-light); }
+.next-action span { display: block; font-size: 10px; letter-spacing: 0.16em; color: var(--gold); margin-bottom: 6px; }
+.next-action p { font-size: 13px; font-weight: 300; color: var(--text-mid); line-height: 1.8; }
+
+.overlay { display: none; position: fixed; inset: 0; background: rgba(40,25,15,0.22); z-index: 90; }
+.overlay.is-open { display: block; }
+
+.history-panel {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: min(380px, 100vw);
+  background: rgba(250,247,243,0.97);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-left: 1px solid rgba(184,149,90,0.14);
+  box-shadow: -8px 0 48px rgba(90,55,20,0.10);
+  z-index: 100; padding: 28px 24px; overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(.25,.46,.45,.94);
+}
+.history-panel.is-open { transform: translateX(0); }
+
+.history-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 26px; padding-bottom: 16px; border-bottom: 1px solid rgba(184,149,90,0.14); }
+.history-panel-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 19px; font-weight: 400; color: var(--text-dark); letter-spacing: 0.10em; }
+.history-panel-header button { width: 34px; height: 34px; border: 1px solid rgba(184,149,90,0.28); border-radius: 50%; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-mid); transition: all 0.22s; }
+.history-panel-header button:hover { background: var(--gold); border-color: var(--gold); color: #fff; }
+.history-panel-header button svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; }
+
+.history-empty { text-align: center; padding: 48px 0; color: var(--text-light); font-size: 13px; font-weight: 300; letter-spacing: 0.10em; line-height: 2.2; }
+.history-empty span { display: block; font-size: 12px; opacity: 0.7; }
+
+.history-list { display: flex; flex-direction: column; gap: 12px; }
+.history-item { padding: 16px; background: rgba(255,255,255,0.68); border: 1px solid rgba(184,149,90,0.12); border-radius: 12px; transition: all 0.2s; }
+.history-item:hover { border-color: rgba(184,149,90,0.28); background: rgba(255,255,255,0.90); }
+.history-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.history-meta span { font-size: 11px; color: var(--gold); letter-spacing: 0.12em; }
+.history-meta time { font-size: 11px; color: var(--text-light); letter-spacing: 0.05em; }
+.history-item h3 { font-family: 'Noto Serif JP', serif; font-size: 14px; font-weight: 400; color: var(--text-dark); margin-bottom: 6px; letter-spacing: 0.06em; }
+.history-item p { font-size: 12px; font-weight: 300; color: var(--text-mid); line-height: 1.7; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
