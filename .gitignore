@@ -24,3 +24,4 @@ dist-ssr
 *.sw?
 .env.loca*
 src/assets/*.png
+src/assets/
