@@ -314,6 +314,7 @@ function App() {
   const [aiError, setAiError] = useState(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
+  const resultCardRef = useRef(null);
   const aiRequestIdRef = useRef(0);
 
   useEffect(() => {
@@ -326,6 +327,14 @@ function App() {
     el.style.height = "auto";
     if (input) el.style.height = el.scrollHeight + "px";
   }, [input]);
+
+  useEffect(() => {
+    if (lastResult && resultCardRef.current) {
+      setTimeout(() => {
+        resultCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 60);
+    }
+  }, [lastResult]);
 
   const currentEntry = useMemo(
     () => ENTRIES.find((e) => e.id === selectedEntry),
@@ -393,6 +402,7 @@ function App() {
     e.preventDefault();
     const text = input.trim();
     if (!text || !currentEntry) return;
+    const wasContinuing = isContinuing;
     const result = classifyConsult(text);
     const savedUrls = attachedUrls.filter((u) => u.trim() !== "");
     setConsultations((prev) => [
@@ -433,12 +443,15 @@ function App() {
           summary: result.summary,
           guidance: result.guidance,
           entryTitle: currentEntry.title,
+          isContinuing: wasContinuing,
         });
         const aiText = await askGemini(prompt);
         if (requestId === aiRequestIdRef.current) {
-          const fallbackText = currentEntry.id === "regular"
-            ? "こんにちは。ご相談の内容を拝見しました。髪や頭皮のことは、実際の状態を見ながらお伝えする方が確かです。ぜひご来店時に一緒に確認させてください。"
-            : "こんにちは、Da-isの来店前相談AI『Dペッパー』です。ご相談の内容を拝見しました。髪や頭皮のことは、実際の状態を見ながらお伝えする方が確かです。ぜひご来店時に一緒に確認させてください。";
+          const fallbackText = wasContinuing
+            ? "続きですね。先ほどの内容に続けて整理します。髪や頭皮のことは、実際の状態を見ながらお伝えする方が確かです。ぜひご来店時に一緒に確認させてください。"
+            : currentEntry.id === "regular"
+              ? "こんにちは。ご相談の内容を拝見しました。髪や頭皮のことは、実際の状態を見ながらお伝えする方が確かです。ぜひご来店時に一緒に確認させてください。"
+              : "こんにちは、Da-isの来店前相談AI『Dペッパー』です。ご相談の内容を拝見しました。髪や頭皮のことは、実際の状態を見ながらお伝えする方が確かです。ぜひご来店時に一緒に確認させてください。";
           let cleaned = aiText
             .replace(/^\s*#{1,6}\s*/gm, "")
             .trim();
@@ -657,8 +670,10 @@ function App() {
                     )}
                   </div>
                   <p className="ref-section-note">
-                    参考画像・URLがあれば追加できます。ヘアスタイル、ヘアカラー、髪の状態などを相談の参考にします。<br />
-                    実際に確認が必要な場合は、ご予約時・お電話・ご来店時にお見せください。
+                    画像やURLは、相談内容を自分で整理するための記録です。<br />
+                    現在、Dペッパーが画像やURLの中身を自動で詳しく確認・判断することはありません。<br />
+                    店舗スタッフへ自動送信もされません。<br />
+                    来店時に見せたい画像は、スマホに保存してお持ちください。
                   </p>
                 </div>}
 
@@ -667,11 +682,11 @@ function App() {
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M22 2 11 13" /><path d="m22 2-7 20-4-9-9-4 20-7Z" />
                   </svg>
-                  <span>送信・保存する</span>
+                  <span>相談・記録する</span>
                 </button>
               </form>
               {lastResult && (
-                <div className="result-card">
+                <div className="result-card" ref={resultCardRef}>
                   {lastResult.category === "__complaint__" ? (
                     /* 不満・クレーム検知時：カテゴリ名を表示しない中立表示 */
                     <>
@@ -736,7 +751,7 @@ function App() {
                       )}
                       <p>{lastResult.summary}</p>
                       {aiLoading && (
-                        <div className="ai-loading">Dペッパーが考えています…</div>
+                        <div className="ai-loading">Dペッパーが相談内容を整理しています…</div>
                       )}
                       {!aiLoading && aiResponse && (
                         <div className="ai-response">
