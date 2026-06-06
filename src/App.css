@@ -677,15 +677,22 @@ body {
   border-radius: 10px;
   border-left: 3px solid #b8893e;
   background: rgba(255, 252, 248, 1.0);
+  overflow: visible;
+  max-height: none;
 }
-.ai-response p {
+.ai-response p,
+.ai-response div {
   font-size: 13px;
   font-weight: 400;
   color: #3a2e26;
-  line-height: 1.95;
+  line-height: 1.8;
   white-space: pre-wrap;
   word-break: break-word;
   margin-top: 8px;
+  overflow: visible;
+  max-height: none;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
 }
 
 .result-image-badge {

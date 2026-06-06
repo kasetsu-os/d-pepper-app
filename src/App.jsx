@@ -127,9 +127,9 @@ function classifyConsult(text) {
       guidance: "シャンプーやトリートメントは成分名だけでなく、使用感・蓄積感・乾きにくさ・重さ・数週間使った変化で選ぶことが大切です。オージュアを基本軸にしつつ、市販品についても一般的な観点でご相談を受けられます。",
       nextAction: "以下からご希望の案内先をお選びください。",
     };
-  if (v.includes("ダメージ") || v.includes("傷んだ") || v.includes("痛んだ") || v.includes("枝毛") || v.includes("切れ毛") || v.includes("パサパサ") || v.includes("パサつ") || v.includes("まとまらない") || v.includes("広がり") || v.includes("ツヤ") || v.includes("ハリ") || v.includes("コシ"))
+  if (v.includes("ダメージ") || v.includes("傷んだ") || v.includes("傷んで") || v.includes("傷み") || v.includes("痛んだ") || v.includes("枝毛") || v.includes("切れ毛") || v.includes("パサパサ") || v.includes("パサつ") || v.includes("ゴワつ") || v.includes("ゴワゴワ") || v.includes("絡まる") || v.includes("絡まり") || v.includes("引っかかる") || v.includes("手触り") || v.includes("まとまらない") || v.includes("広がり") || v.includes("ツヤ") || v.includes("ハリ") || v.includes("コシ"))
     return {
-      category: "ダメージ・ケア相談", group: "ケア",
+      category: "ダメージ・手触り相談", group: "ケア",
       summary: "髪のダメージやケアに関する相談として記録しました。",
       guidance: "ダメージはキューティクルから深部へ進行します。ケアは深部から表面へ整える方向です。「補修」は不足分を補い扱いやすく整えること、「予防」は摩擦・熱・洗髪による今後の流出を抑えることです。成分名より使用感と蓄積の変化で判断することをおすすめします。",
       nextAction: "ヘアスタイルや施術内容の最終判断は、髪の状態を確認したうえでご案内します。ご予約時の備考欄にご記入いただくか、お急ぎの場合はお電話でご相談ください。",
@@ -418,7 +418,23 @@ function App() {
           entryTitle: currentEntry.title,
         });
         const aiText = await askGemini(prompt);
-        if (requestId === aiRequestIdRef.current) setAiResponse(aiText);
+        if (requestId === aiRequestIdRef.current) {
+          const fallbackText = currentEntry.id === "regular"
+            ? "こんにちは。ご相談の内容を拝見しました。髪や頭皮のことは、実際の状態を見ながらお伝えする方が確かです。ぜひご来店時に一緒に確認させてください。"
+            : "こんにちは、Da-isの来店前相談AI『Dペッパー』です。ご相談の内容を拝見しました。髪や頭皮のことは、実際の状態を見ながらお伝えする方が確かです。ぜひご来店時に一緒に確認させてください。";
+          let cleaned = aiText
+            .replace(/^\s*#{1,6}\s*/gm, "")
+            .trim();
+          const hasMarkdown = /^\s*#{1,6}/m.test(cleaned);
+          const isComplete = cleaned.endsWith("。") || cleaned.endsWith("！") || cleaned.endsWith("？");
+          if (hasMarkdown || !isComplete) {
+            console.log("AI response fallback — hasMarkdown:", hasMarkdown, "isComplete:", isComplete);
+            cleaned = fallbackText;
+          }
+          console.log("Final AI response length:", cleaned.length);
+          console.log("Final AI response:", cleaned);
+          setAiResponse(cleaned);
+        }
       } catch (err) {
         if (requestId === aiRequestIdRef.current) {
           console.error("Gemini error:", err);

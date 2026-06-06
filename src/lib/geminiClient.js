@@ -17,5 +17,8 @@ export async function askGemini(prompt) {
     throw new Error("Gemini response has no text");
   }
 
+  console.log("AI response length:", data.text.length);
+  console.log("AI response preview:", data.text);
+
   return data.text;
 }

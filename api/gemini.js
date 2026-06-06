@@ -29,7 +29,7 @@ export default async function handler(req, res) {
         generationConfig: {
           temperature: 0.4,
           topP: 0.9,
-          maxOutputTokens: 1000,
+          maxOutputTokens: 10000,
         },
       }),
     });
@@ -58,6 +58,11 @@ export default async function handler(req, res) {
     if (!text) {
       return res.status(500).json({ error: "Gemini response text is empty" });
     }
+
+    console.log("Gemini finishReason:", data.candidates?.[0]?.finishReason);
+    console.log("Gemini safetyRatings:", data.candidates?.[0]?.safetyRatings);
+    console.log("Gemini response length:", text.length);
+    console.log("Gemini response preview:", text);
 
     return res.status(200).json({ text });
   } catch (err) {
