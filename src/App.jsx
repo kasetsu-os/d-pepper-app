@@ -4,6 +4,7 @@ import { buildDpepperPrompt } from "./lib/dpepperPrompt";
 import { askGemini } from "./lib/geminiClient";
 
 const STORAGE_KEY = "d-pepper-consultations";
+const FONT_SIZE_KEY = "d-pepper-font-size";
 
 const ENTRIES = [
   {
@@ -312,6 +313,7 @@ function App() {
   const [aiResponse, setAiResponse] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
+  const [fontSize, setFontSize] = useState(() => localStorage.getItem(FONT_SIZE_KEY) || "medium");
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
   const resultCardRef = useRef(null);
@@ -335,6 +337,10 @@ function App() {
       }, 60);
     }
   }, [lastResult]);
+
+  useEffect(() => {
+    localStorage.setItem(FONT_SIZE_KEY, fontSize);
+  }, [fontSize]);
 
   const currentEntry = useMemo(
     () => ENTRIES.find((e) => e.id === selectedEntry),
@@ -448,10 +454,10 @@ function App() {
         const aiText = await askGemini(prompt);
         if (requestId === aiRequestIdRef.current) {
           const fallbackText = wasContinuing
-            ? "続きですね。先ほどの内容に続けて整理します。髪や頭皮のことは、実際の状態を見ながらお伝えする方が確かです。ぜひご来店時に一緒に確認させてください。"
+            ? "続きですね。書いていただいた内容をもとに、もう少し整理してみます。気になる点や状態の変化があれば、続けて書いてみてください。"
             : currentEntry.id === "regular"
-              ? "こんにちは。ご相談の内容を拝見しました。髪や頭皮のことは、実際の状態を見ながらお伝えする方が確かです。ぜひご来店時に一緒に確認させてください。"
-              : "こんにちは、Da-isの来店前相談AI『Dペッパー』です。ご相談の内容を拝見しました。髪や頭皮のことは、実際の状態を見ながらお伝えする方が確かです。ぜひご来店時に一緒に確認させてください。";
+              ? "こんにちは。ご相談の内容を拝見しました。気になっている状態や変化を、もう少し詳しく書いていただくと、整理しやすくなります。"
+              : "こんにちは、Da-isの来店前相談AI『Dペッパー』です。ご相談の内容を拝見しました。気になっている状態を、もう少し具体的に書いていただくと、整理しやすくなります。";
           let cleaned = aiText
             .replace(/^\s*#{1,6}\s*/gm, "")
             .trim();
@@ -485,7 +491,7 @@ function App() {
   }
 
   return (
-    <div className="画面">
+    <div className={`画面 fs-${fontSize}`}>
       {/* 背景画像レイヤー：画面::before で表示（dais-consult-bg.png） */}
 
       {/* 右側装飾レイヤー：円弧・ドット（独立管理） */}
@@ -502,20 +508,35 @@ function App() {
           <span className="brand-main">Da-is</span>
           <span className="brand-sub">相談窓口</span>
         </div>
-        <button
-          type="button"
-          className="history-button"
-          onClick={() => setHistoryOpen(true)}
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="8.5" />
-            <path d="M12 7.5V12l3.2 1.8" />
-          </svg>
-          <span>履歴</span>
-          {consultations.length > 0 && (
-            <span className="history-count">{consultations.length}</span>
-          )}
-        </button>
+        <div className="header-right">
+          <div className="font-size-toggle" aria-label="文字サイズ">
+            {[["small", "小"], ["medium", "中"], ["large", "大"]].map(([val, label]) => (
+              <button
+                key={val}
+                type="button"
+                className={`font-size-btn${fontSize === val ? " active" : ""}`}
+                onClick={() => setFontSize(val)}
+                aria-pressed={fontSize === val}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="history-button"
+            onClick={() => setHistoryOpen(true)}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="8.5" />
+              <path d="M12 7.5V12l3.2 1.8" />
+            </svg>
+            <span>履歴</span>
+            {consultations.length > 0 && (
+              <span className="history-count">{consultations.length}</span>
+            )}
+          </button>
+        </div>
       </header>
 
       <main className="main-area">
@@ -588,7 +609,11 @@ function App() {
                 <p className="textarea-helper">
                   {isContinuing
                     ? "続きを書いてください。うまくまとまっていなくても大丈夫です。"
-                    : "今、気になっていることをそのまま書いてください。うまくまとまっていなくても大丈夫です。"}
+                    : currentEntry.id === "stylist"
+                      ? "気になっていることをそのまま書いてください。採用・見学の詳細はご来店またはお電話でご案内します。"
+                      : currentEntry.id === "regular"
+                        ? "いつものこと、前回からの変化、気になっていること。何でも書いてください。"
+                        : "気になっていることをそのまま書いてください。うまくまとまっていなくても大丈夫です。"}
                 </p>
                 <textarea
                   ref={textareaRef}
@@ -596,7 +621,11 @@ function App() {
                   onChange={(e) => setInput(e.target.value)}
                   placeholder={isContinuing
                     ? "続きを書いてください。\n例：もう少し詳しくいうと、前髪の扱いに迷っています。"
-                    : "例：最近、分け目の地肌が気になっています。"
+                    : currentEntry.id === "regular"
+                      ? "例：前回のカラーから気になっていることがあります"
+                      : currentEntry.id === "first"
+                        ? "例：髪のダメージが気になっています"
+                        : "例：Da-isの働き方について知りたいです"
                   }
                   rows={8}
                 />

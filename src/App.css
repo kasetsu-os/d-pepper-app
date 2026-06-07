@@ -276,6 +276,33 @@ body {
   background: var(--gold); color: #fff; font-size: 10px; letter-spacing: 0;
 }
 
+.header-right {
+  display: flex; align-items: center; gap: 10px;
+}
+
+.font-size-toggle {
+  display: flex; align-items: center; gap: 2px;
+  background: rgba(255,255,255,0.40);
+  border: 1px solid rgba(184,149,90,0.22);
+  border-radius: var(--radius-pill);
+  padding: 3px;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+
+.font-size-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px;
+  border: none; border-radius: var(--radius-pill);
+  background: none;
+  color: var(--text-light);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 11px; font-weight: 300; letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.20s ease;
+}
+.font-size-btn:hover { color: var(--text-mid); background: rgba(184,149,90,0.10); }
+.font-size-btn.active { background: var(--gold); color: #fff; font-weight: 400; }
+
 .main-area {
   flex: 1; display: flex; flex-direction: column; align-items: center;
   padding: 56px 24px 80px; width: 100%; max-width: 660px; margin: 0 auto;
@@ -785,6 +812,19 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ─── 文字サイズ切り替え ─── */
+.fs-small  .consult-card textarea,
+.fs-small  .ai-response p, .fs-small  .ai-response div,
+.fs-small  .result-card > p, .fs-small  .next-action p { font-size: 15px; }
+
+.fs-medium .consult-card textarea,
+.fs-medium .ai-response p, .fs-medium .ai-response div,
+.fs-medium .result-card > p, .fs-medium .next-action p { font-size: 17px; }
+
+.fs-large  .consult-card textarea,
+.fs-large  .ai-response p, .fs-large  .ai-response div,
+.fs-large  .result-card > p, .fs-large  .next-action p { font-size: 19px; }
+
 /* ─── スマートフォン縦画面 ─── */
 /* 右側装飾：背景画像に玉ボケ含むため全幅で停止 */
 
@@ -794,6 +834,10 @@ body {
   .brand-main  { font-size: 20px; }
   .brand-sub   { font-size: 10px; letter-spacing: 0.24em; }
   .history-button { padding: 8px 12px; font-size: 12px; min-height: 44px; }
+  .font-size-toggle { padding: 2px; }
+  .font-size-btn { width: 24px; height: 24px; font-size: 10px; }
+  /* iOS自動ズーム防止：fs-smallでもtextareaは16px以上を維持 */
+  .fs-small .consult-card textarea { font-size: 16px; }
 
   /* ── メインエリア ── */
   .main-area { padding: 24px 14px 64px; }
