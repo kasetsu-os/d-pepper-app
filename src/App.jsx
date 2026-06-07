@@ -474,7 +474,15 @@ function App() {
       } catch (err) {
         if (requestId === aiRequestIdRef.current) {
           console.error("Gemini error:", err);
-          setAiError(err.message ?? "応答を取得できませんでした。");
+          if (savedUrls.length > 0) {
+            /* URL 付き相談で失敗した場合はエラー表示せずフォールバック応答を返す */
+            const urlFallback = wasContinuing
+              ? "続きですね。URLの内容までは確認できませんでしたが、シャンプーやトリートメントは成分名だけでなく、使った後の重さ・乾きにくさ・ベタつき・数週間使った変化を見ることが大切です。今の髪や頭皮の状態と合わせて整理できます。"
+              : "こんにちは、Da-isの来店前相談AI『Dペッパー』です。URLの内容までは確認できませんでしたが、シャンプーやトリートメントは成分名だけでなく、使った後の重さ・乾きにくさ・ベタつき・数週間使った変化を見ることが大切です。商品だけで合う合わないを決めず、今の髪や頭皮の状態と合わせて整理できます。";
+            setAiResponse(urlFallback);
+          } else {
+            setAiError(err.message ?? "応答を取得できませんでした。");
+          }
         }
       } finally {
         if (requestId === aiRequestIdRef.current) setAiLoading(false);
@@ -709,6 +717,7 @@ function App() {
                   <p className="ref-section-note">
                     URLは、Dペッパーが相談内容を整理するための参考として扱います。<br />
                     ページによっては内容を確認できない場合があります。<br />
+                    URLの内容を確認できない場合でも、相談文をもとに見るポイントを整理します。<br />
                     画像はDペッパーが内容を自動で判断することはありません。来店時に見せたい画像はスマホに保存してお持ちください。<br />
                     店舗スタッフへ自動送信されるものではありません。
                   </p>

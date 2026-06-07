@@ -33,6 +33,28 @@ async function fetchUrlContent(url) {
   }
 }
 
+async function callGemini(apiUrl, promptText) {
+  const res = await fetch(apiUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: promptText }] }],
+      generationConfig: {
+        temperature: 0.4,
+        topP: 0.9,
+        maxOutputTokens: 10000,
+      },
+    }),
+  });
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    const message = errBody?.error?.message ?? "(no message)";
+    const status = errBody?.error?.status ?? res.status;
+    throw new Error(`Gemini API error: ${res.status} ${status} – ${message}`);
+  }
+  return res.json();
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -48,84 +70,105 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "prompt is required" });
   }
 
-  /* URL参照：サーバー側でフェッチしてプロンプトに追加 */
-  let urlSection = "";
-  const validUrls = Array.isArray(urls) ? urls.filter(u => typeof u === "string" && u.trim()) : [];
-  if (validUrls.length > 0) {
-    console.log("Fetching URLs:", validUrls);
-    const results = await Promise.all(
-      validUrls.map(async (u) => {
-        const content = await fetchUrlContent(u);
-        if (content) {
-          console.log(`URL fetch success: ${u} (${content.length}chars)`);
-          return `URL: ${u}\n参照内容：${content}`;
-        } else {
-          console.log(`URL fetch failed: ${u}`);
-          return `URL: ${u}\n参照内容：このURLの内容は確認できませんでした（Amazon・楽天・Instagram・Pinterestなどは取得できない場合があります）`;
-        }
+  /* カテゴリ・グループをプロンプトから抽出（ログ用） */
+  const categoryMatch = prompt.match(/カテゴリ：([^\s/]+)/);
+  const groupMatch = prompt.match(/分類：([^\n/]+)/);
+  const logCategory = categoryMatch?.[1]?.trim() ?? "不明";
+  const logGroup = groupMatch?.[1]?.trim() ?? "不明";
+
+  /* URL バリデーション：空・プレースホルダー・不正形式を除外 */
+  const validUrls = Array.isArray(urls)
+    ? urls.filter(u => {
+        if (typeof u !== "string") return false;
+        const t = u.trim();
+        return t.length > 0
+          && t !== "https://..."
+          && t !== "https://"
+          && t !== "http://"
+          && (t.startsWith("https://") || t.startsWith("http://"));
       })
-    );
-    urlSection =
-      `\n\n【参考URL内容】\n${results.join("\n\n")}` +
-      `\n\n【URLへの指示】URLの内容は参考情報として扱う。「この商品が合う・合わない」と断定しない。Da-isの判断基準で見るポイントを整理する。「使い続けた変化を見る」「蓄積の可能性」の視点を加える。内容を確認できなかったURLは相談文の文脈だけで判断する。`;
+    : [];
+
+  console.log("URL count:", urls?.length);
+  console.log("Has valid URLs:", validUrls.length > 0);
+  console.log("Consult category:", logCategory);
+  console.log("Group:", logGroup);
+
+  /* URL 参照：サーバー側でフェッチしてプロンプトに追加 */
+  let urlSection = "";
+  if (validUrls.length > 0) {
+    try {
+      const results = await Promise.all(
+        validUrls.map(async (u) => {
+          const content = await fetchUrlContent(u);
+          if (content) {
+            console.log(`URL fetch success: ${u} (${content.length}chars)`);
+            return `URL: ${u}\n参照内容：${content}`;
+          } else {
+            console.log(`URL fetch failed: ${u}`);
+            return `URL: ${u}\n参照内容：このURLの内容は確認できませんでした（Amazon・楽天・Instagram・Pinterestなどは取得できない場合があります）`;
+          }
+        })
+      );
+      urlSection =
+        `\n\n【参考URL内容】\n${results.join("\n\n")}` +
+        `\n\n【URLへの指示】URLの内容は参考情報として扱う。「この商品が合う・合わない」と断定しない。Da-isの判断基準で使用感・蓄積感・乾きにくさ・根元の重さ・数週間使った変化を見るポイントを整理する。内容を確認できなかったURLは相談文の文脈だけで判断する。`;
+    } catch (urlErr) {
+      console.error("URL section build error:", urlErr?.message);
+      /* URL 処理が全体的に失敗しても Gemini 呼び出しは続行 */
+    }
   }
 
-  /* 【出力制約】の直前にURL参照セクションを挿入 */
+  /* 【出力制約】の直前に URL 参照セクションを挿入 */
   const insertMarker = "【出力制約】";
   const insertIdx = prompt.lastIndexOf(insertMarker);
   const fullPrompt = insertIdx !== -1
     ? prompt.slice(0, insertIdx) + urlSection + "\n\n" + prompt.slice(insertIdx)
     : prompt + urlSection;
 
-  const MODEL = "gemini-2.5-flash";
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
   try {
-    const geminiRes = await fetch(apiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: fullPrompt }] }],
-        generationConfig: {
-          temperature: 0.4,
-          topP: 0.9,
-          maxOutputTokens: 10000,
-        },
-      }),
-    });
+    const data = await callGemini(apiUrl, fullPrompt);
+    const candidate = data.candidates?.[0];
+    const finishReason = candidate?.finishReason;
 
-    if (!geminiRes.ok) {
-      const errBody = await geminiRes.json().catch(() => ({}));
-      const message = errBody?.error?.message ?? "(no message)";
-      const status = errBody?.error?.status ?? geminiRes.status;
-      return res.status(geminiRes.status).json({
-        error: `Gemini API error: ${geminiRes.status} ${status} – ${message}`,
+    console.log("Gemini finishReason:", finishReason);
+    console.log("Gemini safetyRatings:", candidate?.safetyRatings);
+
+    /* Safety block 等で content が取れない場合は URL なしでリトライ */
+    if (!candidate?.content) {
+      console.log("Gemini blocked or no content. finishReason:", finishReason);
+      if (urlSection) {
+        console.log("Retrying without URL section");
+        try {
+          const retryData = await callGemini(apiUrl, prompt);
+          const retryText = retryData.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (retryText) {
+            console.log("Retry succeeded:", retryText.length, "chars");
+            return res.status(200).json({ text: retryText });
+          }
+        } catch (retryErr) {
+          console.error("Retry also failed:", retryErr?.message);
+        }
+      }
+      return res.status(500).json({
+        error: "Gemini response was blocked or empty",
+        finishReason: finishReason ?? "unknown",
       });
     }
 
-    const data = await geminiRes.json();
-
-    if (!data.candidates || data.candidates.length === 0) {
-      return res.status(500).json({ error: "Gemini response has no candidates" });
-    }
-
-    const parts = data.candidates[0]?.content?.parts;
-    if (!parts || parts.length === 0) {
-      return res.status(500).json({ error: "Gemini response has no content parts" });
-    }
-
-    const text = parts[0]?.text;
+    const text = candidate.content.parts?.[0]?.text;
     if (!text) {
       return res.status(500).json({ error: "Gemini response text is empty" });
     }
 
-    console.log("Gemini finishReason:", data.candidates?.[0]?.finishReason);
-    console.log("Gemini safetyRatings:", data.candidates?.[0]?.safetyRatings);
     console.log("Gemini response length:", text.length);
-    console.log("Gemini response preview:", text);
+    console.log("Gemini response preview:", text.slice(0, 120));
 
     return res.status(200).json({ text });
   } catch (err) {
+    console.error("Handler error:", err?.message);
     return res.status(500).json({ error: err.message ?? "Unknown error" });
   }
 }
