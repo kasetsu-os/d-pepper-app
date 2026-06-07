@@ -66,6 +66,7 @@ export async function POST(request) {
   const { prompt, urls = [], images = [] } = body;
   console.log("Prompt exists:", Boolean(prompt));
   console.log("Prompt length:", prompt?.length || 0);
+  console.log("Received images count:", images?.length || 0);
 
   if (!prompt) {
     return Response.json({ error: "prompt is required" }, { status: 400 });
@@ -109,11 +110,24 @@ export async function POST(request) {
   }
 
   // ── 画像処理 ──────────────────────────────────────────
-  const validImages = Array.isArray(images)
-    ? images.filter((img) => img && typeof img.data === "string" && img.data.length > 0 && img.mimeType)
+  // base64接頭辞 (data:image/jpeg;base64,) が付いている場合は除去
+  const cleanedImages = Array.isArray(images)
+    ? images.map((img) => {
+        if (!img) return null;
+        const data = typeof img.data === "string"
+          ? img.data.replace(/^data:image\/[a-zA-Z+]+;base64,/, "")
+          : "";
+        return { ...img, data };
+      }).filter(Boolean)
     : [];
 
-  console.log("Image count:", validImages.length);
+  const validImages = cleanedImages.filter(
+    (img) => img.data.length > 0 && img.mimeType
+  );
+
+  console.log("Image count:", Array.isArray(images) ? images.length : 0);
+  console.log("Valid images count:", validImages.length);
+  console.log("Image mimeTypes:", validImages.map((img) => img.mimeType));
 
   let imageStatus = "not_provided";
   let imageSection = "";

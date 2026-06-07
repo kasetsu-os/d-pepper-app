@@ -493,6 +493,8 @@ function App() {
       setAiLoading(true);
       const requestId = ++aiRequestIdRef.current;
       const encodedImages = (await encodedImagesPromise).filter(Boolean);
+      console.log("Encoded images count:", encodedImages.length);
+      console.log("Encoded image mimeTypes:", encodedImages.map((img) => img.mimeType));
       try {
         const prompt = buildDpepperPrompt({
           text,

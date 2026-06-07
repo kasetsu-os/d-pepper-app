@@ -1,4 +1,5 @@
 export async function askGemini(prompt, urls = [], images = []) {
+  console.log("Sending images count:", images?.length || 0);
   const res = await fetch("/api/gemini", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
