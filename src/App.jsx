@@ -529,9 +529,12 @@ function App() {
         if (requestId === aiRequestIdRef.current) {
           console.error("Gemini error:", err);
           if (savedUrls.length > 0 || encodedImages.length > 0) {
+            const hasUrl = savedUrls.length > 0;
+            const hasImg = encodedImages.length > 0;
+            const what = hasUrl && hasImg ? "URLや画像の内容まで" : hasImg ? "画像の内容は十分に" : "URLの内容まで";
             const fallback = wasContinuing
-              ? "続きですね。URLや画像の内容までは確認できませんでしたが、シャンプーやトリートメントは成分名だけでなく、使った後の重さ・乾きにくさ・ベタつき・数週間使った変化を見ることが大切です。今の髪や頭皮の状態と合わせて整理できます。"
-              : "こんにちは、Da-isの髪と頭皮の相談所『Dペッパー』です。URLや画像の内容までは確認できませんでしたが、シャンプーやトリートメントは成分名だけでなく、使った後の重さ・乾きにくさ・ベタつき・数週間使った変化を見ることが大切です。商品だけで合う合わないを決めず、今の髪や頭皮の状態と合わせて整理できます。";
+              ? `続きですね。${what}は確認できませんでしたが、シャンプーやトリートメントは成分名だけでなく、使った後の重さ・乾きにくさ・ベタつき・数週間使った変化を見ることが大切です。今の髪や頭皮の状態と合わせて整理できます。`
+              : `こんにちは、Da-isの髪と頭皮の相談所『Dペッパー』です。${what}は確認できませんでしたが、シャンプーやトリートメントは成分名だけでなく、使った後の重さ・乾きにくさ・ベタつき・数週間使った変化を見ることが大切です。商品だけで合う合わないを決めず、今の髪や頭皮の状態と合わせて整理できます。`;
             setAiResponse(fallback);
           } else {
             setAiError(err.message ?? "応答を取得できませんでした。");

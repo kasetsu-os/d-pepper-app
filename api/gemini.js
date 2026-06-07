@@ -144,7 +144,7 @@ export async function POST(request) {
     console.log("Image read status:", imageStatus);
 
     if (imageStatus === "readable") {
-      imageSection = `\n【画像参照】\nimageStatus: readable\n応答の自然な流れの中で、必ず「貼っていただいた画像から見える範囲では、」と明示すること。画像は相談整理の参考として使う。診断・断定はしない。確認できる範囲：髪の長さ・明るさ・色味の印象・広がり・まとまり・毛先のパサつき印象・スタイルの方向性・白髪や根元の見え方の参考。禁止：医療判断・頭皮疾患断定・薄毛診断・炎症確定・ダメージレベル確定・薬剤選定断定・商品の合う合わない断定。光の当たり方・画質・角度で見え方が変わることを前提にする。\n`;
+      imageSection = `\n【画像参照】\nimageStatus: readable\n画像が添付されています。画像は診断ではなく相談整理の参考として扱ってください。応答の自然な流れの中で、必ず「貼っていただいた画像から見える範囲では、」と明示すること。確認できる範囲：髪の長さ・明るさ・色味の印象・広がり・まとまり・毛先のパサつき印象・スタイルの方向性・白髪や根元の見え方の参考。禁止：薄毛・炎症・病気・ダメージレベル確定・薬剤選定断定・商品の合う合わない断定。光の当たり方・画質・角度で見え方が変わることを前提にする。\n`;
     } else if (imageStatus === "partial") {
       imageSection = `\n【画像参照】\nimageStatus: partial（一部の画像のみ確認できました）\n応答の自然な流れの中で、必ず「貼っていただいた画像のうち、見える範囲を参考にすると、」と明示すること。同じく診断・断定はしない。\n`;
     } else {
@@ -163,8 +163,24 @@ export async function POST(request) {
   // ── Gemini マルチモーダルリクエスト ────────────────────
   const parts = [{ text: finalPrompt }];
   for (const img of validImages) {
-    parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
+    // data に接頭辞が残っていないか最終確認
+    const cleanData = img.data.replace(/^data:image\/[a-zA-Z+]+;base64,/, "");
+    parts.push({ inlineData: { mimeType: img.mimeType, data: cleanData } });
   }
+
+  console.log("Gemini parts count:", parts.length);
+  if (validImages.length > 0) {
+    console.log("First image data prefix (20 chars):", validImages[0].data.slice(0, 20));
+  }
+
+  const requestBody = {
+    contents: [{ role: "user", parts }],
+    generationConfig: {
+      temperature: 0.4,
+      topP: 0.9,
+      maxOutputTokens: 10000,
+    },
+  };
 
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
@@ -173,14 +189,7 @@ export async function POST(request) {
     geminiRes = await fetch(apiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts }],
-        generationConfig: {
-          temperature: 0.4,
-          topP: 0.9,
-          maxOutputTokens: 10000,
-        },
-      }),
+      body: JSON.stringify(requestBody),
     });
   } catch (err) {
     console.error("Fetch to Gemini failed:", err?.message);
