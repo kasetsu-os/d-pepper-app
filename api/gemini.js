@@ -1,7 +1,3 @@
-export const config = {
-  maxDuration: 30,
-};
-
 async function fetchUrlContent(url) {
   try {
     const controller = new AbortController();
