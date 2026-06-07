@@ -5,6 +5,7 @@ import { askGemini } from "./lib/geminiClient";
 
 const STORAGE_KEY = "d-pepper-consultations";
 const FONT_SIZE_KEY = "d-pepper-font-size";
+const FEEDBACK_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdxr97reDcABJk6Xfom8MUAYUV09GGhd_i1X7yke3B7SogWoA/viewform?usp=publish-editor";
 
 const ENTRIES = [
   {
@@ -922,6 +923,21 @@ function App() {
                           </div>
                         );
                       })()}
+                      <div className="feedback-section">
+                        <p className="feedback-note">
+                          不具合や使いにくい点があれば教えてください。<br />
+                          いただいた内容は、Dペッパー改善の参考にします。<br />
+                          お急ぎの相談や予約については、予約ページまたはお電話をご利用ください。
+                        </p>
+                        <a
+                          href={FEEDBACK_FORM_URL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="feedback-btn"
+                        >
+                          不具合・感想を送る
+                        </a>
+                      </div>
                     </>
                   )}
                 </div>
