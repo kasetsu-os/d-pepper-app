@@ -219,6 +219,49 @@ function classifyConsult(text) {
   };
 }
 
+function extractUrls(text) {
+  const matches = text.match(/https?:\/\/[^\s　、。！？「」（）［］]+/g) || [];
+  return matches
+    .map((u) => u.replace(/[.,、。！？!?)）\]］>]+$/g, ""))
+    .filter((u) => {
+      try { new URL(u); return true; } catch { return false; }
+    });
+}
+
+function resizeAndEncodeImage(imgObj) {
+  return new Promise((resolve) => {
+    const { file } = imgObj;
+    if (!file) { resolve(null); return; }
+    const img = new window.Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX = 1600;
+      let { width, height } = img;
+      if (width > MAX || height > MAX) {
+        if (width >= height) { height = Math.round(height * MAX / width); width = MAX; }
+        else { width = Math.round(width * MAX / height); height = MAX; }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(objectUrl);
+      canvas.toBlob(
+        (blob) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve({ name: file.name, mimeType: "image/jpeg", data: reader.result.split(",")[1] });
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(blob);
+        },
+        "image/jpeg",
+        0.8
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(null); };
+    img.src = objectUrl;
+  });
+}
+
 function Icon({ type }) {
   if (type === "heart") return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -392,6 +435,7 @@ function App() {
     const newImages = toAdd.map((file) => ({
       previewUrl: URL.createObjectURL(file),
       name: file.name,
+      file,
     }));
     setAttachedImages((prev) => [...prev, ...newImages]);
     e.target.value = "";
@@ -410,7 +454,14 @@ function App() {
     if (!text || !currentEntry) return;
     const wasContinuing = isContinuing;
     const result = classifyConsult(text);
-    const savedUrls = attachedUrls.filter((u) => u.trim() !== "");
+    const fieldUrls = attachedUrls.filter((u) => u.trim() !== "");
+    const textUrls = extractUrls(text);
+    const savedUrls = [...new Set([...fieldUrls, ...textUrls])];
+
+    // 画像エンコードを状態クリア前にスナップショットして非同期開始
+    const imagesToEncode = [...attachedImages];
+    const encodedImagesPromise = Promise.all(imagesToEncode.map((img) => resizeAndEncodeImage(img)));
+
     setConsultations((prev) => [
       {
         id: Date.now(),
@@ -441,6 +492,7 @@ function App() {
     if (result.category !== "__complaint__") {
       setAiLoading(true);
       const requestId = ++aiRequestIdRef.current;
+      const encodedImages = (await encodedImagesPromise).filter(Boolean);
       try {
         const prompt = buildDpepperPrompt({
           text,
@@ -451,7 +503,7 @@ function App() {
           entryTitle: currentEntry.title,
           isContinuing: wasContinuing,
         });
-        const aiText = await askGemini(prompt, savedUrls);
+        const aiText = await askGemini(prompt, savedUrls, encodedImages);
         if (requestId === aiRequestIdRef.current) {
           const fallbackText = wasContinuing
             ? "続きですね。書いていただいた内容をもとに、もう少し整理してみます。気になる点や状態の変化があれば、続けて書いてみてください。"
@@ -474,12 +526,11 @@ function App() {
       } catch (err) {
         if (requestId === aiRequestIdRef.current) {
           console.error("Gemini error:", err);
-          if (savedUrls.length > 0) {
-            /* URL 付き相談で失敗した場合はエラー表示せずフォールバック応答を返す */
-            const urlFallback = wasContinuing
-              ? "続きですね。URLの内容までは確認できませんでしたが、シャンプーやトリートメントは成分名だけでなく、使った後の重さ・乾きにくさ・ベタつき・数週間使った変化を見ることが大切です。今の髪や頭皮の状態と合わせて整理できます。"
-              : "こんにちは、Da-isの髪と頭皮の相談所『Dペッパー』です。URLの内容までは確認できませんでしたが、シャンプーやトリートメントは成分名だけでなく、使った後の重さ・乾きにくさ・ベタつき・数週間使った変化を見ることが大切です。商品だけで合う合わないを決めず、今の髪や頭皮の状態と合わせて整理できます。";
-            setAiResponse(urlFallback);
+          if (savedUrls.length > 0 || encodedImages.length > 0) {
+            const fallback = wasContinuing
+              ? "続きですね。URLや画像の内容までは確認できませんでしたが、シャンプーやトリートメントは成分名だけでなく、使った後の重さ・乾きにくさ・ベタつき・数週間使った変化を見ることが大切です。今の髪や頭皮の状態と合わせて整理できます。"
+              : "こんにちは、Da-isの髪と頭皮の相談所『Dペッパー』です。URLや画像の内容までは確認できませんでしたが、シャンプーやトリートメントは成分名だけでなく、使った後の重さ・乾きにくさ・ベタつき・数週間使った変化を見ることが大切です。商品だけで合う合わないを決めず、今の髪や頭皮の状態と合わせて整理できます。";
+            setAiResponse(fallback);
           } else {
             setAiError(err.message ?? "応答を取得できませんでした。");
           }
@@ -715,11 +766,11 @@ function App() {
                     )}
                   </div>
                   <p className="ref-section-note">
-                    URLは、Dペッパーが相談内容を整理するための参考として扱います。<br />
-                    ページによっては内容を確認できない場合があります。<br />
-                    URLの内容を確認できない場合でも、相談文をもとに見るポイントを整理します。<br />
-                    画像はDペッパーが内容を自動で判断することはありません。来店時に見せたい画像はスマホに保存してお持ちください。<br />
-                    店舗スタッフへ自動送信されるものではありません。
+                    画像やURLは、Dペッパーが相談内容を整理するための参考として扱います。<br />
+                    画像は見える範囲で確認しますが、写真だけで正確な判断をするものではありません。<br />
+                    相談文の中にURLを書いた場合も、参考URLとして扱います。<br />
+                    店舗スタッフへ自動送信されるものではありません。<br />
+                    来店時に見せたい画像やURLは、スマホにも保存しておいてください。
                   </p>
                 </div>}
 
