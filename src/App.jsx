@@ -451,7 +451,7 @@ function App() {
           entryTitle: currentEntry.title,
           isContinuing: wasContinuing,
         });
-        const aiText = await askGemini(prompt);
+        const aiText = await askGemini(prompt, savedUrls);
         if (requestId === aiRequestIdRef.current) {
           const fallbackText = wasContinuing
             ? "続きですね。書いていただいた内容をもとに、もう少し整理してみます。気になる点や状態の変化があれば、続けて書いてみてください。"
@@ -707,10 +707,10 @@ function App() {
                     )}
                   </div>
                   <p className="ref-section-note">
-                    画像やURLは、相談内容を自分で整理するための記録です。<br />
-                    現在、Dペッパーが画像やURLの中身を自動で詳しく確認・判断することはありません。<br />
-                    店舗スタッフへ自動送信もされません。<br />
-                    来店時に見せたい画像は、スマホに保存してお持ちください。
+                    URLは、Dペッパーが相談内容を整理するための参考として扱います。<br />
+                    ページによっては内容を確認できない場合があります。<br />
+                    画像はDペッパーが内容を自動で判断することはありません。来店時に見せたい画像はスマホに保存してお持ちください。<br />
+                    店舗スタッフへ自動送信されるものではありません。
                   </p>
                 </div>}
 

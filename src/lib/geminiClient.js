@@ -1,8 +1,8 @@
-export async function askGemini(prompt) {
+export async function askGemini(prompt, urls = []) {
   const res = await fetch("/api/gemini", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt }),
+    body: JSON.stringify({ prompt, urls }),
   });
 
   if (!res.ok) {
