@@ -230,6 +230,38 @@ function extractUrls(text) {
     });
 }
 
+const SHARE_FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLSevLDDVaXd3S0eMHNqL7GTomvm3TY8SwUFQO62WeOgRJd8nJQ/viewform";
+
+function buildShareUrl(result, aiResponse) {
+  try {
+    const lines = [
+      `【相談カテゴリ】${result.category}`,
+      `【分類】${result.group}`,
+      "",
+      result.text ?? "",
+      "",
+      `送信日時：${new Date().toLocaleString("ja-JP")}`,
+    ];
+    const consultText = lines.join("\n").slice(0, 3500);
+
+    const urlParts = [];
+    if (result.imageCount > 0) urlParts.push(`画像 ${result.imageCount}枚`);
+    if (result.attachedUrls?.length > 0) urlParts.push(`URL ${result.attachedUrls.length}件`);
+    const attachInfo = urlParts.length > 0 ? urlParts.join("、") + " 添付あり" : "";
+
+    const q = [
+      `usp=pp_url`,
+      `entry.1825538084=${encodeURIComponent(consultText)}`,
+      aiResponse ? `entry.948403332=${encodeURIComponent(aiResponse.slice(0, 3500))}` : "",
+      attachInfo ? `entry.1738990388=${encodeURIComponent(attachInfo)}` : "",
+    ].filter(Boolean).join("&");
+
+    return `${SHARE_FORM_BASE}?${q}`;
+  } catch {
+    return SHARE_FORM_URL;
+  }
+}
+
 function resizeAndEncodeImage(imgObj) {
   return new Promise((resolve) => {
     const { file } = imgObj;
@@ -484,7 +516,7 @@ function App() {
       ...prev,
     ]);
     attachedImages.forEach((img) => URL.revokeObjectURL(img.previewUrl));
-    setLastResult({ ...result, imageCount: attachedImages.length, attachedUrls: savedUrls });
+    setLastResult({ ...result, imageCount: attachedImages.length, attachedUrls: savedUrls, text });
     setAttachedImages([]);
     setAttachedUrls([""]);
     setIsContinuing(false);
@@ -944,14 +976,16 @@ function App() {
                               お急ぎの場合は、お電話をご利用ください。
                             </p>
                             <p className="share-confirm-hint">
-                              フォームには、必要に応じてこの相談内容やDペッパーの返答を貼り付けてください。
+                              フォームには、この相談内容の一部が自動入力されます。<br />
+                              内容を確認し、必要に応じて追記して送信してください。
                             </p>
                             <div className="share-confirm-btns">
                               <button
                                 type="button"
                                 className="share-confirm-go"
                                 onClick={() => {
-                                  window.open(SHARE_FORM_URL, "_blank", "noopener,noreferrer");
+                                  const url = buildShareUrl(lastResult, aiResponse);
+                                  window.open(url, "_blank", "noopener,noreferrer");
                                   setShowShareConfirm(false);
                                 }}
                               >
