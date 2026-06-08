@@ -933,31 +933,36 @@ function App() {
                             className="share-btn"
                             onClick={() => setShowShareConfirm(true)}
                           >
-                            Da-isに共有する
+                            Da-isに相談内容を共有する
                           </button>
                         ) : (
                           <div className="share-confirm">
                             <p className="share-confirm-text">
                               この相談内容をDa-isに共有しますか？<br />
-                              共有すると、お店用メールに内容が送信されます。<br />
-                              返信を希望する場合は、共有先フォームで返信先を入力してください。
+                              共有すると、相談内容がDa-isのお店用メールに送信されます。<br />
+                              返信を希望する場合は、共有フォーム内で返信先を入力してください。<br />
+                              お急ぎの場合は、お電話をご利用ください。
+                            </p>
+                            <p className="share-confirm-hint">
+                              フォームには、必要に応じてこの相談内容やDペッパーの返答を貼り付けてください。
                             </p>
                             <div className="share-confirm-btns">
-                              <a
-                                href={SHARE_FORM_URL}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                              <button
+                                type="button"
                                 className="share-confirm-go"
-                                onClick={() => setShowShareConfirm(false)}
+                                onClick={() => {
+                                  window.open(SHARE_FORM_URL, "_blank", "noopener,noreferrer");
+                                  setShowShareConfirm(false);
+                                }}
                               >
-                                共有フォームへ進む
-                              </a>
+                                共有フォームを開く
+                              </button>
                               <button
                                 type="button"
                                 className="share-confirm-cancel"
                                 onClick={() => setShowShareConfirm(false)}
                               >
-                                やめる
+                                キャンセル
                               </button>
                             </div>
                           </div>

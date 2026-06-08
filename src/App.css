@@ -584,8 +584,15 @@ body {
   font-size: 12px;
   color: var(--text-mid);
   line-height: 1.75;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   letter-spacing: 0.04em;
+}
+.share-confirm-hint {
+  font-size: 11px;
+  color: var(--text-light);
+  line-height: 1.65;
+  margin-bottom: 12px;
+  letter-spacing: 0.03em;
 }
 .share-confirm-btns {
   display: flex;
