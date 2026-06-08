@@ -549,6 +549,91 @@ body {
   border-color: rgba(184,149,90,0.55);
   color: var(--text-dark);
 }
+/* Da-isに共有する */
+.share-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(184,149,90,0.12);
+  text-align: center;
+}
+.share-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 22px;
+  border: 1px solid rgba(184,149,90,0.40);
+  border-radius: var(--radius-pill);
+  background: rgba(184,149,90,0.06);
+  color: #8a6a28;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.share-btn:hover {
+  background: rgba(184,149,90,0.13);
+  border-color: rgba(184,149,90,0.55);
+  color: #7a5c20;
+}
+.share-confirm {
+  text-align: left;
+}
+.share-confirm-text {
+  font-size: 12px;
+  color: var(--text-mid);
+  line-height: 1.75;
+  margin-bottom: 12px;
+  letter-spacing: 0.04em;
+}
+.share-confirm-btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.share-confirm-go {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 18px;
+  border: 1px solid rgba(184,149,90,0.50);
+  border-radius: var(--radius-pill);
+  background: rgba(184,149,90,0.10);
+  color: #7a5c20;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.share-confirm-go:hover {
+  background: rgba(184,149,90,0.18);
+  border-color: rgba(184,149,90,0.65);
+}
+.share-confirm-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 18px;
+  border: 1px solid rgba(160,160,160,0.30);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-light);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.share-confirm-cancel:hover {
+  background: rgba(160,160,160,0.08);
+  border-color: rgba(160,160,160,0.45);
+  color: var(--text-mid);
+}
 /* フィードバック導線 */
 .feedback-section {
   margin-top: 24px;

@@ -6,6 +6,7 @@ import { askGemini } from "./lib/geminiClient";
 const STORAGE_KEY = "d-pepper-consultations";
 const FONT_SIZE_KEY = "d-pepper-font-size";
 const FEEDBACK_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdxr97reDcABJk6Xfom8MUAYUV09GGhd_i1X7yke3B7SogWoA/viewform?usp=publish-editor";
+const SHARE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSevLDDVaXd3S0eMHNqL7GTomvm3TY8SwUFQO62WeOgRJd8nJQ/viewform?usp=publish-editor";
 
 const ENTRIES = [
   {
@@ -358,6 +359,7 @@ function App() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
   const [fontSize, setFontSize] = useState(() => localStorage.getItem(FONT_SIZE_KEY) || "medium");
+  const [showShareConfirm, setShowShareConfirm] = useState(false);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
   const resultCardRef = useRef(null);
@@ -486,6 +488,7 @@ function App() {
     setAttachedImages([]);
     setAttachedUrls([""]);
     setIsContinuing(false);
+    setShowShareConfirm(false);
 
     /* Gemini AI 応答 */
     setAiResponse(null);
@@ -923,6 +926,43 @@ function App() {
                           </div>
                         );
                       })()}
+                      <div className="share-section">
+                        {!showShareConfirm ? (
+                          <button
+                            type="button"
+                            className="share-btn"
+                            onClick={() => setShowShareConfirm(true)}
+                          >
+                            Da-isに共有する
+                          </button>
+                        ) : (
+                          <div className="share-confirm">
+                            <p className="share-confirm-text">
+                              この相談内容をDa-isに共有しますか？<br />
+                              共有すると、お店用メールに内容が送信されます。<br />
+                              返信を希望する場合は、共有先フォームで返信先を入力してください。
+                            </p>
+                            <div className="share-confirm-btns">
+                              <a
+                                href={SHARE_FORM_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="share-confirm-go"
+                                onClick={() => setShowShareConfirm(false)}
+                              >
+                                共有フォームへ進む
+                              </a>
+                              <button
+                                type="button"
+                                className="share-confirm-cancel"
+                                onClick={() => setShowShareConfirm(false)}
+                              >
+                                やめる
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                       <div className="feedback-section">
                         <p className="feedback-note">
                           不具合や使いにくい点があれば教えてください。<br />
