@@ -556,8 +556,12 @@ function App() {
       const requestId = ++aiRequestIdRef.current;
       const encodedImages = (await encodedImagesPromise).filter(Boolean);
       lastEncodedImagesRef.current = encodedImages;
-      console.log("Encoded images count:", encodedImages.length);
-      console.log("Encoded image mimeTypes:", encodedImages.map((img) => img.mimeType));
+      console.log("[DPEPPER FRONT] encodedImages.length:", encodedImages.length);
+      console.log("[DPEPPER FRONT] savedUrls.length:", savedUrls.length);
+      console.log("[DPEPPER FRONT] category:", result.category);
+      console.log("[DPEPPER FRONT] group:", result.group);
+      console.log("[DPEPPER FRONT] text(50):", text.slice(0, 50));
+      console.log("[DPEPPER FRONT] hasImages:", encodedImages.length > 0);
       try {
         const prompt = buildDpepperPrompt({
           text,
@@ -596,16 +600,22 @@ function App() {
             const hasUrl = savedUrls.length > 0;
             const hasImg = encodedImages.length > 0;
             const what = hasUrl && hasImg ? "URLや画像の内容まで" : hasImg ? "画像の内容は十分に" : "URLの内容まで";
+            let fallbackType;
             let fallback;
             if (wasContinuing) {
+              fallbackType = "continuing";
               fallback = `続きですね。${what}は確認できませんでしたが、書いていただいた内容をもとに整理します。気になる変化があれば、続けて書いてみてください。`;
-            } else if (result.group === "デザイン" || result.group === "ケア・デザイン" || encodedImages.length > 0) {
-              fallback = `こんにちは、Da-isの髪と頭皮の相談所『Dペッパー』です。${what}は確認できませんでしたが、ヘアスタイルやカラーの相談として整理します。理想の雰囲気・色味・スタイルのイメージを来店時に画像や言葉でお伝えいただくと、状態に合わせた方向を一緒に考えやすくなります。`;
+            } else if (hasImg || result.group === "デザイン" || result.group === "ケア・デザイン") {
+              fallbackType = "design/image";
+              fallback = `こんにちは、Da-isの髪と頭皮の相談所『Dペッパー』です。${what}は確認できませんでしたが、ヘアスタイルや色味の相談として整理できます。担当美容師には、画像のどこを再現したいか、色味・明るさ・雰囲気・長さ・顔まわりの印象を分けて伝えると相談しやすいです。`;
             } else if (result.group === "ケア") {
+              fallbackType = "care";
               fallback = `こんにちは、Da-isの髪と頭皮の相談所『Dペッパー』です。${what}は確認できませんでしたが、シャンプーやトリートメントは成分名だけでなく、使った後の重さ・乾きにくさ・ベタつき・数週間使った変化を見ることが大切です。商品だけで合う合わないを決めず、今の髪や頭皮の状態と合わせて整理できます。`;
             } else {
+              fallbackType = "generic";
               fallback = `こんにちは、Da-isの髪と頭皮の相談所『Dペッパー』です。${what}は確認できませんでしたが、相談文をもとに整理します。気になる状態をもう少し具体的に書いていただくと、整理しやすくなります。`;
             }
+            console.log("[DPEPPER FALLBACK] type:", fallbackType, "| hasImg:", hasImg, "| group:", result.group);
             setAiResponse(fallback);
           } else {
             setAiError(err.message ?? "応答を取得できませんでした。");

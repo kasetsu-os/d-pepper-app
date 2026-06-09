@@ -153,12 +153,12 @@ export async function POST(request) {
 
     if (urlStatus === "readable") {
       const combined = readableResults.map((r) => r.text).join("\n\n---\n\n").slice(0, 2000);
-      urlSection = `\n【URL参照内容】\nurlStatus: readable\n応答の自然な流れの中で、必ず「貼っていただいたURLの内容を参考にすると、」と明示すること。断定（合う・合わない・買った方がいい等）はしない。商品の種類・気になる特徴・使用感確認点・数週間での変化の見方を整理する。Da-is視点：成分名だけでなく、使用感・蓄積感・乾きにくさ・重さ・数週間使った変化を見ることが大切と伝える。\n\n${combined}\n`;
+      urlSection = `\n【URL参照内容】\nurlStatus: readable\n応答の自然な流れの中で、必ず「貼っていただいたURLの内容を参考にすると、」と明示すること。断定（合う・合わない・買った方がいい等）はしない。URLの内容と相談文をもとに、相談の主題（ヘアスタイル・カラー・ケア・頭皮など）に沿った視点で整理する。プロンプトの判断基準ルールに従うこと。\n\n${combined}\n`;
     } else if (urlStatus === "partial") {
       const combined = readableResults.map((r) => r.text).join("\n\n---\n\n").slice(0, 2000);
-      urlSection = `\n【URL参照内容】\nurlStatus: partial（一部のURLは内容を確認できました。確認できなかったURLもあります）\n応答の自然な流れの中で、必ず「貼っていただいたURLのうち、一部の内容を参考にすると、」と明示すること。断定（合う・合わない・買った方がいい等）はしない。読めた内容と相談文をもとに、商品の種類・気になる特徴・使用感確認点・数週間での変化の見方を整理する。Da-is視点：成分名だけでなく、使用感・蓄積感・乾きにくさ・重さ・数週間使った変化を見ることが大切と伝える。\n\n${combined}\n`;
+      urlSection = `\n【URL参照内容】\nurlStatus: partial（一部のURLは内容を確認できました。確認できなかったURLもあります）\n応答の自然な流れの中で、必ず「貼っていただいたURLのうち、一部の内容を参考にすると、」と明示すること。断定（合う・合わない・買った方がいい等）はしない。読めた内容と相談文をもとに、相談の主題（ヘアスタイル・カラー・ケア・頭皮など）に沿った視点で整理する。プロンプトの判断基準ルールに従うこと。\n\n${combined}\n`;
     } else {
-      urlSection = `\n【URL参照内容】\nurlStatus: unreadable（全てのURLの内容を確認できませんでした）\n応答の中で必ず「URLの内容までは確認できませんでしたが、相談文をもとに見るポイントを整理します。」と明示すること。\n`;
+      urlSection = `\n【URL参照内容】\nurlStatus: unreadable（全てのURLの内容を確認できませんでした）\n応答の中で必ず「URLの内容までは確認できませんでしたが、相談文をもとに見るポイントを整理します。」と明示すること。相談の主題がヘアスタイル・カラーの場合はそちらの観点で整理すること。\n`;
     }
   } else {
     console.log("URL read status: not_provided");
@@ -180,9 +180,13 @@ export async function POST(request) {
     (img) => img.data.length > 0 && img.mimeType
   );
 
-  console.log("Image count:", Array.isArray(images) ? images.length : 0);
-  console.log("Valid images count:", validImages.length);
-  console.log("Image mimeTypes:", validImages.map((img) => img.mimeType));
+  console.log("[DPEPPER API] images.length received:", Array.isArray(images) ? images.length : 0);
+  console.log("[DPEPPER API] validImages:", validImages.length);
+  console.log("[DPEPPER API] image mimeTypes:", validImages.map((img) => img.mimeType));
+  if (validImages.length > 0) {
+    console.log("[DPEPPER API] first image mimeType:", validImages[0].mimeType);
+    console.log("[DPEPPER API] first image data length:", validImages[0].data.length);
+  }
 
   let imageStatus = "not_provided";
   let imageSection = "";
@@ -223,9 +227,12 @@ export async function POST(request) {
     parts.push({ inlineData: { mimeType: img.mimeType, data: cleanData } });
   }
 
-  console.log("Gemini parts count:", parts.length);
+  console.log("[DPEPPER API] parts count:", parts.length);
+  console.log("[DPEPPER API] inlineData parts:", parts.filter((p) => p.inlineData).length);
+  console.log("[DPEPPER API] hasImages:", validImages.length > 0, "| hasUrls:", validUrls.length > 0);
   if (validImages.length > 0) {
-    console.log("First image data prefix (20 chars):", validImages[0].data.slice(0, 20));
+    console.log("[DPEPPER API] first image mimeType in parts:", validImages[0].mimeType);
+    console.log("[DPEPPER API] first image data prefix:", validImages[0].data.slice(0, 20));
   }
 
   const requestBody = {

@@ -11,12 +11,12 @@ import {
 export function buildDpepperPrompt({ text, category, group, summary, guidance, entryTitle, isContinuing = false, hasImages = false }) {
   const categoryRulesParts = [];
   const appliedRuleNames = ["commonRules", "bannedPhrases", "preferredPhrases"];
+  console.log("[DPEPPER PROMPT] hasImages:", hasImages, "| group:", group, "| category:", category);
   if (group.includes("頭皮"))   { categoryRulesParts.push(scalpRules);  appliedRuleNames.push("scalpRules"); }
   if (group.includes("ケア"))   { categoryRulesParts.push(careRules);   appliedRuleNames.push("careRules"); }
   if (group.includes("デザイン") || hasImages) { categoryRulesParts.push(designRules); appliedRuleNames.push("designRules"); }
   if (hasImages || group.includes("デザイン")) { categoryRulesParts.push(imageTranslationRules); appliedRuleNames.push("imageTranslationRules"); }
-  console.log("Dペッパー applied rules:", appliedRuleNames.join(", "));
-  console.log("Dペッパー group:", group, "/ category:", category, "/ isContinuing:", isContinuing);
+  console.log("[DPEPPER PROMPT] applied rules:", appliedRuleNames.join(", "));
   const categoryRulesText = categoryRulesParts.join("\n\n");
 
   return `【前提・役割】
