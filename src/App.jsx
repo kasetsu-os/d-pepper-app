@@ -3,6 +3,15 @@ import "./App.css";
 import { buildDpepperPrompt } from "./lib/dpepperPrompt";
 import { askGemini } from "./lib/geminiClient";
 
+function withDaIs(text) {
+  if (!text || !text.includes("Da-is")) return text;
+  return text.split("Da-is").flatMap((part, i, arr) =>
+    i < arr.length - 1
+      ? [part, <ruby key={i}>Da-is<rt>デイズ</rt></ruby>]
+      : [part]
+  );
+}
+
 const STORAGE_KEY = "d-pepper-consultations";
 const FONT_SIZE_KEY = "d-pepper-font-size";
 const FEEDBACK_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdxr97reDcABJk6Xfom8MUAYUV09GGhd_i1X7yke3B7SogWoA/viewform?usp=publish-editor";
@@ -728,7 +737,7 @@ function App() {
         {!selectedEntry && (
           <section className="home-view">
             <div className="hero">
-              <h1>Da-isの相談所へようこそ。</h1>
+              <h1><ruby>Da-is<rt>デイズ</rt></ruby>の相談所へようこそ。</h1>
               <div className="deco-line">
                 <span className="deco-diamond" />
               </div>
@@ -745,7 +754,7 @@ function App() {
                   <span className="entry-icon"><Icon type={entry.icon} /></span>
                   <span className="entry-text">
                     <span className="entry-title">{entry.title}</span>
-                    <span className="entry-subtitle">{entry.subtitle}</span>
+                    <span className="entry-subtitle">{withDaIs(entry.subtitle)}</span>
                   </span>
                   <span className="entry-arrow"><ArrowIcon /></span>
                 </button>
@@ -754,7 +763,7 @@ function App() {
 
             {/* 外部導線 */}
             <div className="social-section">
-              <p className="social-label">Da-isをもっと見る</p>
+              <p className="social-label"><ruby>Da-is<rt>デイズ</rt></ruby>をもっと見る</p>
               <div className="social-list">
                 {SOCIAL_LINKS.map(({ href, label, icon }) => (
                   <a
@@ -821,7 +830,7 @@ function App() {
                       ? "例：前回のカラーから気になっていることがあります"
                       : currentEntry.id === "first"
                         ? "例：髪のダメージが気になっています"
-                        : "例：Da-isの働き方について知りたいです"
+                        : "例：デイズの働き方について知りたいです"
                   }
                   rows={8}
                 />
@@ -994,7 +1003,7 @@ function App() {
                         {!aiLoading && !aiResponse && aiError && (
                           <div className="ai-error">
                             <p>AI応答を取得できませんでした。</p>
-                            <p>時間をおいてもう一度試すか、相談内容をDa-isに共有していただくと、お店側で確認しやすくなります。</p>
+                            <p>時間をおいてもう一度試すか、相談内容を<ruby>Da-is<rt>デイズ</rt></ruby>に共有していただくと、お店側で確認しやすくなります。</p>
                             <div className="ai-error-actions">
                               <button
                                 type="button"
@@ -1009,7 +1018,7 @@ function App() {
                                 className="retry-share-btn"
                                 onClick={() => setShowShareConfirm(true)}
                               >
-                                Da-isに相談内容を共有する
+                                <ruby>Da-is<rt>デイズ</rt></ruby>に相談内容を共有する
                               </button>
                             </div>
                           </div>
@@ -1023,7 +1032,7 @@ function App() {
                       </div>
                       <div className="next-action" style={{ marginTop: "10px" }}>
                         <span>次の案内</span>
-                        <p>{lastResult.nextAction}</p>
+                        <p>{withDaIs(lastResult.nextAction)}</p>
                       </div>
                       {(() => {
                         const btns = EXIT_BUTTONS[lastResult.category] ?? EXIT_BUTTONS["髪の悩み"];
@@ -1071,7 +1080,7 @@ function App() {
                                       rel={btn.url.startsWith("tel:") ? undefined : "noopener noreferrer"}
                                       className="exit-btn"
                                     >
-                                      {btn.label}
+                                      {withDaIs(btn.label)}
                                     </a>
                                   ))}
                                 </div>
@@ -1090,13 +1099,13 @@ function App() {
                             className="share-btn"
                             onClick={() => setShowShareConfirm(true)}
                           >
-                            Da-isに相談内容を共有する
+                            <ruby>Da-is<rt>デイズ</rt></ruby>に相談内容を共有する
                           </button>
                         ) : (
                           <div className="share-confirm">
                             <p className="share-confirm-text">
-                              この相談内容をDa-isに共有しますか？<br />
-                              共有すると、相談内容がDa-isのお店用メールに送信されます。<br />
+                              この相談内容を<ruby>Da-is<rt>デイズ</rt></ruby>に共有しますか？<br />
+                              共有すると、相談内容が<ruby>Da-is<rt>デイズ</rt></ruby>のお店用メールに送信されます。<br />
                               返信を希望する場合は、共有フォーム内で返信先を入力してください。<br />
                               お急ぎの場合は、店舗へお電話ください（受付10:00〜17:00）。
                             </p>
