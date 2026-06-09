@@ -13,7 +13,7 @@ export function buildDpepperPrompt({ text, category, group, summary, guidance, e
   const categoryRulesParts = [];
   const appliedRuleNames = ["commonRules", "bannedPhrases", "preferredPhrases"];
   console.log("[DPEPPER PROMPT] hasImages:", hasImages, "| group:", group, "| category:", category);
-  const isColorConsult = category === "カラー相談" || /色持ち|退色|色落ち|カラー持ち|トリートメント持ち/.test(text);
+  const isColorConsult = category === "カラー相談" || /色持ち|退色|色落ち|カラー持ち|トリートメント持ち|色が抜け|色が変わ|すぐ落ち|すぐ明るく|すぐ黄色|すぐ赤く|黄色っぽ|赤みが出|染めた時と違|持ちが悪|トリートメントが取れ|手触りが戻|パサつきが戻|ツヤがなくな/.test(text);
   if (group.includes("頭皮"))   { categoryRulesParts.push(scalpRules);  appliedRuleNames.push("scalpRules"); }
   if (group.includes("ケア"))   { categoryRulesParts.push(careRules);   appliedRuleNames.push("careRules"); }
   if (group.includes("デザイン") || hasImages) { categoryRulesParts.push(designRules); appliedRuleNames.push("designRules"); }
