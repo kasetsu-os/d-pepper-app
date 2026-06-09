@@ -689,7 +689,7 @@ function App() {
       {/* ヘッダー */}
       <header className="app-header">
         <div className="brand">
-          <span className="brand-main">Da-is</span>
+          <span className="brand-main"><ruby>Da-is<rt>ダイス</rt></ruby></span>
           <span className="brand-sub">相談窓口</span>
         </div>
         <div className="header-right">
