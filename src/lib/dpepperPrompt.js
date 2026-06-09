@@ -6,6 +6,7 @@ import {
   colorRetentionRules,
   bedheadRules,
   humidityDrynessRules,
+  nutritionDietRules,
   imageTranslationRules,
   bannedPhrases,
   preferredPhrases,
@@ -24,6 +25,8 @@ export function buildDpepperPrompt({ text, category, group, summary, guidance, e
   if (isColorConsult) { categoryRulesParts.push(colorRetentionRules); appliedRuleNames.push("colorRetentionRules"); }
   if (isBedheadConsult) { categoryRulesParts.push(bedheadRules); appliedRuleNames.push("bedheadRules"); }
   if (isHumidityDrynessConsult) { categoryRulesParts.push(humidityDrynessRules); appliedRuleNames.push("humidityDrynessRules"); }
+  const isNutritionDietConsult = /食べ物|栄養|何を食べたら|髪が生える|毛が生える|髪が伸びる|伸びやすい|早く伸ばしたい|サプリ|ビオチン|亜鉛|鉄分|タンパク質|プロテイン|ダイエット|食事制限|急に痩せた|抜け毛が増えた|髪が細くなった|ハリコシがなくなった|頭皮の栄養|栄養不足|数珠毛|ちぢれ毛/.test(text);
+  if (isNutritionDietConsult) { categoryRulesParts.push(nutritionDietRules); appliedRuleNames.push("nutritionDietRules"); }
   if (hasImages) { categoryRulesParts.push(imageTranslationRules); appliedRuleNames.push("imageTranslationRules"); }
   console.log("[DPEPPER PROMPT] hasImages:", hasImages, "| imageTranslationRules applied:", hasImages);
   console.log("[DPEPPER PROMPT] applied rules:", appliedRuleNames.join(", "));
