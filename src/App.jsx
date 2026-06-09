@@ -565,12 +565,14 @@ function App() {
       const requestId = ++aiRequestIdRef.current;
       const encodedImages = (await encodedImagesPromise).filter(Boolean);
       lastEncodedImagesRef.current = encodedImages;
+      console.log("[DPEPPER FRONT] uploadedImages.length:", imagesToEncode.length);
       console.log("[DPEPPER FRONT] encodedImages.length:", encodedImages.length);
+      console.log("[DPEPPER FRONT] hasImages:", encodedImages.length > 0);
+      console.log("[DPEPPER REF] lastEncodedImagesRef.length:", lastEncodedImagesRef.current.length);
       console.log("[DPEPPER FRONT] savedUrls.length:", savedUrls.length);
       console.log("[DPEPPER FRONT] category:", result.category);
       console.log("[DPEPPER FRONT] group:", result.group);
       console.log("[DPEPPER FRONT] text(50):", text.slice(0, 50));
-      console.log("[DPEPPER FRONT] hasImages:", encodedImages.length > 0);
       try {
         const prompt = buildDpepperPrompt({
           text,
@@ -640,6 +642,8 @@ function App() {
     if (!lastResult || aiLoading) return;
     const retryImages = lastEncodedImagesRef.current;
     const retryUrls = lastResult.attachedUrls ?? [];
+    console.log("[DPEPPER REF] handleRetryAI lastEncodedImagesRef.length:", retryImages.length);
+    console.log("[DPEPPER FRONT] hasImages (retry):", retryImages.length > 0);
     setAiError(null);
     setAiLoading(true);
     setLoadingWithImages(retryImages.length > 0);

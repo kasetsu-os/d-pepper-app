@@ -24,7 +24,8 @@ export function buildDpepperPrompt({ text, category, group, summary, guidance, e
   if (isColorConsult) { categoryRulesParts.push(colorRetentionRules); appliedRuleNames.push("colorRetentionRules"); }
   if (isBedheadConsult) { categoryRulesParts.push(bedheadRules); appliedRuleNames.push("bedheadRules"); }
   if (isHumidityDrynessConsult) { categoryRulesParts.push(humidityDrynessRules); appliedRuleNames.push("humidityDrynessRules"); }
-  if (hasImages || group.includes("デザイン")) { categoryRulesParts.push(imageTranslationRules); appliedRuleNames.push("imageTranslationRules"); }
+  if (hasImages) { categoryRulesParts.push(imageTranslationRules); appliedRuleNames.push("imageTranslationRules"); }
+  console.log("[DPEPPER PROMPT] hasImages:", hasImages, "| imageTranslationRules applied:", hasImages);
   console.log("[DPEPPER PROMPT] applied rules:", appliedRuleNames.join(", "));
   const categoryRulesText = categoryRulesParts.join("\n\n");
 
@@ -49,7 +50,8 @@ ${text}
 - プレーンな日本語の文章だけで返す
 - 380〜520文字以内で必ず完結させる。途中で文章を切らない
 - 必ず句点「。」で文章全体を終える
-- 段落は3つ
+- 段落は3つ${!hasImages ? `
+- 画像は添付されていない。「画像から見える範囲では」「貼っていただいた画像」「この画像は」「画像を参考にすると」など、画像を参照する表現を絶対に使わない` : ""}
 
 【段落ごとの役割】
 1段落目：${isContinuing ? "「続きですね。」「先ほどの内容に続けて整理します。」など会話継続前提の自然な一文で始める。初回挨拶「こんにちは、Da-isの髪と頭皮の相談所〜」は繰り返さない。" : "「こんにちは、Da-isの髪と頭皮の相談所『Dペッパー』です。」のあと、"}${hasImages ? "「貼っていただいた画像から見える範囲では、」の前置きを入れて画像で見える要素（長さ・シルエット・色味・明るさ・前髪・顔まわり・毛先の印象など確認できる範囲）を整理してから、" : ""}お客様が書いた悩みをより具体的な言葉で整理する。何が原因として考えられるか・何を見ると整理しやすいかを、断定せず文章で伝える。「来店してください」ではなく「このように考えると整理しやすい」「自分の髪を見る視点が少し変わる」という方向で書く。
