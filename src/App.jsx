@@ -43,43 +43,43 @@ const EXIT_BUTTONS = {
   "髪の悩み": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
-    { label: "Da-isの予約ページを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "Da-isの予約メニューを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/coupon/" },
     { label: "電話で相談する",               url: "tel:0888023370" },
   ],
   "頭皮の悩み": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
-    { label: "Da-isの予約ページを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "Da-isの予約メニューを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/coupon/" },
     { label: "電話で相談する",               url: "tel:0888023370" },
   ],
   "ダメージ・手触り相談": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
-    { label: "Da-isの予約ページを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "Da-isの予約メニューを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/coupon/" },
     { label: "電話で相談する",               url: "tel:0888023370" },
   ],
   "疲れ・気分・リラックス": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
-    { label: "Da-isの予約ページを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "Da-isの予約メニューを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/coupon/" },
     { label: "noteを見る",                   url: "https://note.com/da_is1119" },
   ],
   "美容室選びの不安": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
-    { label: "Da-isの予約ページを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "Da-isの予約メニューを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/coupon/" },
     { label: "電話で相談する",               url: "tel:0888023370" },
   ],
   "メニュー・予約前の迷い": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
-    { label: "Da-isの予約ページを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "Da-isの予約メニューを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/coupon/" },
     { label: "電話で相談する",               url: "tel:0888023370" },
   ],
   "商品相談": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
-    { label: "Da-isの予約ページを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "Da-isの予約メニューを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/coupon/" },
     { label: "電話で相談する",               url: "tel:0888023370" },
   ],
   "美容師・見学希望": [
@@ -90,13 +90,13 @@ const EXIT_BUTTONS = {
   "円形脱毛症の相談": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
-    { label: "Da-isの予約ページを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "Da-isの予約メニューを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/coupon/" },
     { label: "電話で相談する",               url: "tel:0888023370" },
   ],
   "薄毛・抜け毛の相談": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
-    { label: "Da-isの予約ページを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/" },
+    { label: "Da-isの予約メニューを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/coupon/" },
     { label: "電話で相談する",               url: "tel:0888023370" },
   ],
 };
