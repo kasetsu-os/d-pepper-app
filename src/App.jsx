@@ -946,6 +946,7 @@ function App() {
                           <a href="tel:0888023370" target="_self" className="exit-btn">
                             電話で相談する
                           </a>
+                          <p className="phone-hours-note">電話受付時間：10:00〜17:00</p>
                         </div>
                       </div>
                     </>
@@ -1066,14 +1067,17 @@ function App() {
                                     <a
                                       key={`url-${i}`}
                                       href={btn.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
+                                      target={btn.url.startsWith("tel:") ? "_self" : "_blank"}
+                                      rel={btn.url.startsWith("tel:") ? undefined : "noopener noreferrer"}
                                       className="exit-btn"
                                     >
                                       {btn.label}
                                     </a>
                                   ))}
                                 </div>
+                              )}
+                              {urlBtns.some(b => b.url.startsWith("tel:")) && (
+                                <p className="phone-hours-note">電話受付時間：10:00〜17:00</p>
                               )}
                             </div>
                           </div>
@@ -1094,7 +1098,7 @@ function App() {
                               この相談内容をDa-isに共有しますか？<br />
                               共有すると、相談内容がDa-isのお店用メールに送信されます。<br />
                               返信を希望する場合は、共有フォーム内で返信先を入力してください。<br />
-                              お急ぎの場合は、お電話をご利用ください。
+                              お急ぎの場合は、お電話（10:00〜17:00）をご利用ください。
                             </p>
                             <p className="share-confirm-hint">
                               フォームには、この相談内容の一部が自動入力されます。<br />
