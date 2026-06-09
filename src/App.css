@@ -372,9 +372,23 @@ body {
   margin-bottom: 12px;
 }
 .consult-chip {
-  padding: 10px 8px; text-align: center;
+  padding: 10px 8px 8px; text-align: center;
   background: rgba(255,252,248,0.72); border: 1px solid rgba(184,149,90,0.16);
   border-radius: 8px; backdrop-filter: blur(6px);
+  cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+  min-height: 64px;
+  transition: background 0.22s ease, border-color 0.22s ease, transform 0.18s ease, box-shadow 0.22s ease;
+}
+.consult-chip:hover {
+  background: rgba(255,252,248,0.96);
+  border-color: rgba(184,149,90,0.40);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(90,55,20,0.08);
+}
+.consult-chip:active {
+  transform: translateY(0);
+  background: rgba(255,249,240,0.96);
+  box-shadow: none;
 }
 .consult-chip-title {
   font-size: 11px; font-weight: 400; color: var(--text-dark);
@@ -383,6 +397,15 @@ body {
 .consult-chip-detail {
   font-size: 10px; font-weight: 300; color: var(--text-light);
   letter-spacing: 0.02em; line-height: 1.5;
+}
+.consult-chip-arrow {
+  display: block; font-size: 12px; color: var(--gold);
+  margin-top: 4px; opacity: 0.6; line-height: 1;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.consult-chip:hover .consult-chip-arrow {
+  opacity: 1;
+  transform: translateX(1px);
 }
 .consult-caution {
   font-size: 11px; font-weight: 300; color: var(--text-light);

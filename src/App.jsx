@@ -382,6 +382,27 @@ const SOCIAL_LINKS = [
   { href: "tel:0888023370",                                         label: "TEL",       icon: "phone"     },
 ];
 
+const CONSULT_CHIPS = [
+  {
+    title: "髪や頭皮の悩み",
+    detail: "かゆみ・抜け毛・広がりなど",
+    helperText: "髪や頭皮で気になることを入力してください。",
+    placeholder: "例：かゆみ、抜け毛、広がり、寝癖、湿気でまとまらない など",
+  },
+  {
+    title: "お使いの商品",
+    detail: "シャンプー・オイル・成分表など",
+    helperText: "今お使いの商品について気になることを入力してください。",
+    placeholder: "例：シャンプー、トリートメント、オイル、成分表、使った後の重さ など",
+  },
+  {
+    title: "スタイル・カラー",
+    detail: "画像・URL・色味相談など",
+    helperText: "なりたい髪型や色味、参考画像・URLについて入力してください。",
+    placeholder: "例：この画像の髪型にしたい、透明感のある色にしたい、白髪ぼかしを相談したい など",
+  },
+];
+
 function App() {
   const USER_TYPE_KEY = "dpepper_user_type";
   const [selectedEntry, setSelectedEntry] = useState(() => {
@@ -407,6 +428,7 @@ function App() {
   const [loadingWithImages, setLoadingWithImages] = useState(false);
   const [fontSize, setFontSize] = useState(() => localStorage.getItem(FONT_SIZE_KEY) || "medium");
   const [showShareConfirm, setShowShareConfirm] = useState(false);
+  const [chipHint, setChipHint] = useState(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
   const resultCardRef = useRef(null);
@@ -453,6 +475,15 @@ function App() {
     localStorage.setItem(FONT_SIZE_KEY, fontSize);
   }, [fontSize]);
 
+  useEffect(() => {
+    if (!chipHint) return;
+    const timer = setTimeout(() => {
+      textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      textareaRef.current?.focus();
+    }, 120);
+    return () => clearTimeout(timer);
+  }, [chipHint]);
+
   const currentEntry = useMemo(
     () => ENTRIES.find((e) => e.id === selectedEntry),
     [selectedEntry]
@@ -469,6 +500,7 @@ function App() {
     setAiResponse(null);
     setAiLoading(false);
     setAiError(null);
+    setChipHint(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -483,6 +515,24 @@ function App() {
     setAiResponse(null);
     setAiLoading(false);
     setAiError(null);
+    setChipHint(null);
+  }
+
+  function openEntryFromChip(chip) {
+    const saved = localStorage.getItem("dpepper_user_type");
+    const validIds = ["first", "regular"];
+    const entryId = validIds.includes(saved) ? saved : "first";
+    localStorage.setItem("dpepper_user_type", entryId);
+    setSelectedEntry(entryId);
+    setInput("");
+    setLastResult(null);
+    setAttachedImages([]);
+    setAttachedUrls([""]);
+    setIsContinuing(false);
+    setAiResponse(null);
+    setAiLoading(false);
+    setAiError(null);
+    setChipHint(chip);
   }
 
   function addUrlField() {
@@ -758,15 +808,18 @@ function App() {
             <div className="consult-examples">
               <p className="consult-examples-label">こんな相談ができます</p>
               <div className="consult-chips">
-                {[
-                  { title: "髪や頭皮の悩み",  detail: "かゆみ・抜け毛・広がりなど" },
-                  { title: "お使いの商品",    detail: "シャンプー・オイル・成分表など" },
-                  { title: "スタイル・カラー", detail: "画像・URL・色味相談など" },
-                ].map(({ title, detail }) => (
-                  <div key={title} className="consult-chip">
-                    <p className="consult-chip-title">{title}</p>
-                    <p className="consult-chip-detail">{detail}</p>
-                  </div>
+                {CONSULT_CHIPS.map((chip) => (
+                  <button
+                    key={chip.title}
+                    type="button"
+                    className="consult-chip"
+                    onClick={() => openEntryFromChip(chip)}
+                    aria-label={`${chip.title}について相談する`}
+                  >
+                    <p className="consult-chip-title">{chip.title}</p>
+                    <p className="consult-chip-detail">{chip.detail}</p>
+                    <span className="consult-chip-arrow">›</span>
+                  </button>
                 ))}
               </div>
               <p className="consult-caution">返答は来店前に悩みを整理するための参考です。髪や頭皮の状態は、来店時にスタッフが直接確認します。</p>
@@ -846,11 +899,13 @@ function App() {
                 <p className="textarea-helper">
                   {isContinuing
                     ? "続きを書いてください。うまくまとまっていなくても大丈夫です。"
-                    : currentEntry.id === "stylist"
-                      ? "気になっていることをそのまま書いてください。採用・見学の詳細はご来店またはお電話でご案内します。"
-                      : currentEntry.id === "regular"
-                        ? "いつものこと、前回からの変化、気になっていること。何でも書いてください。"
-                        : "気になっていることをそのまま書いてください。うまくまとまっていなくても大丈夫です。"}
+                    : chipHint
+                      ? chipHint.helperText
+                      : currentEntry.id === "stylist"
+                        ? "気になっていることをそのまま書いてください。採用・見学の詳細はご来店またはお電話でご案内します。"
+                        : currentEntry.id === "regular"
+                          ? "いつものこと、前回からの変化、気になっていること。何でも書いてください。"
+                          : "気になっていることをそのまま書いてください。うまくまとまっていなくても大丈夫です。"}
                 </p>
                 <textarea
                   ref={textareaRef}
@@ -858,11 +913,13 @@ function App() {
                   onChange={(e) => setInput(e.target.value)}
                   placeholder={isContinuing
                     ? "続きを書いてください。\n例：もう少し詳しくいうと、前髪の扱いに迷っています。"
-                    : currentEntry.id === "regular"
-                      ? "例：前回のカラーから気になっていることがあります"
-                      : currentEntry.id === "first"
-                        ? "例：髪のダメージが気になっています"
-                        : "例：デイズの働き方について知りたいです"
+                    : chipHint
+                      ? chipHint.placeholder
+                      : currentEntry.id === "regular"
+                        ? "例：前回のカラーから気になっていることがあります"
+                        : currentEntry.id === "first"
+                          ? "例：髪のダメージが気になっています"
+                          : "例：デイズの働き方について知りたいです"
                   }
                   rows={8}
                 />
