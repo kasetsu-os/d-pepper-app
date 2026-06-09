@@ -8,6 +8,7 @@ import {
   humidityDrynessRules,
   nutritionDietRules,
   hairAgeChangeRules,
+  grayHairMechanismRules,
   imageTranslationRules,
   bannedPhrases,
   preferredPhrases,
@@ -30,6 +31,8 @@ export function buildDpepperPrompt({ text, category, group, summary, guidance, e
   if (isNutritionDietConsult) { categoryRulesParts.push(nutritionDietRules); appliedRuleNames.push("nutritionDietRules"); }
   const isHairAgeChangeConsult = /子どもの頃|子供の頃|昔は直毛|昔は髪が多かった|髪質が変わった|大人になって変わった|年齢で変わった|髪が細くなった|ハリコシがない|うねりが出た|白髪が増えて髪質が変わった|産毛|うぶ毛|顔まわりの毛|生え際の毛|襟足の毛|赤ちゃんの頃から|赤ちゃんの時から|細い毛|切れ毛|新しく生えた毛/.test(text);
   if (isHairAgeChangeConsult) { categoryRulesParts.push(hairAgeChangeRules); appliedRuleNames.push("hairAgeChangeRules"); }
+  const isGrayHairMechanismConsult = /白髪が増えた|急に白髪|なぜ白髪|白くなる|黒髪が白く|ストレスで白髪|一晩で白髪|マリーアントワネット|マリー・アントワネット|白髪の原因|白髪のメカニズム|白髪を減らしたい|白髪をなくしたい|白髪が戻る|黒に戻る|若白髪|白髪ぼか/.test(text);
+  if (isGrayHairMechanismConsult) { categoryRulesParts.push(grayHairMechanismRules); appliedRuleNames.push("grayHairMechanismRules"); }
   if (hasImages) { categoryRulesParts.push(imageTranslationRules); appliedRuleNames.push("imageTranslationRules"); }
   console.log("[DPEPPER PROMPT] hasImages:", hasImages, "| imageTranslationRules applied:", hasImages);
   console.log("[DPEPPER PROMPT] applied rules:", appliedRuleNames.join(", "));
