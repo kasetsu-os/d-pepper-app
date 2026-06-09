@@ -2,9 +2,9 @@ const NO_RETRY_STATUSES = new Set([400, 401, 403]);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function fetchGemini(apiUrl, requestBody, hasImages) {
-  const timeoutMs = hasImages ? 45000 : 30000;
-  const retryDelays = [1000, 2000];
-  const maxAttempts = 3;
+  const timeoutMs = hasImages ? 35000 : 25000;
+  const retryDelays = [1500];
+  const maxAttempts = 2;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const controller = new AbortController();
@@ -240,7 +240,8 @@ export async function POST(request) {
     generationConfig: {
       temperature: 0.4,
       topP: 0.9,
-      maxOutputTokens: 10000,
+      maxOutputTokens: 1024,
+      thinkingConfig: { thinkingBudget: 0 },
     },
   };
 
