@@ -871,7 +871,7 @@ function App() {
                         <circle cx="8.5" cy="10" r="1.5" />
                         <path d="m3 17 5-5 3.5 3.5 3-3 5 5" />
                       </svg>
-                      <span>自分の髪の状態を記録する{attachedImages.length > 0 ? `（${attachedImages.length}/3）` : "（任意・最大3枚）"}</span>
+                      <span>画像を貼り付ける{attachedImages.length > 0 ? `（${attachedImages.length}/3）` : "（任意・最大3枚）"}</span>
                     </button>
                   )}
                   <div className="url-input-area">
