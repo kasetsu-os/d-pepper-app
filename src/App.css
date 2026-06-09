@@ -866,12 +866,12 @@ body {
 .ai-loading {
   padding: 14px 16px;
   border-radius: 10px;
-  border-left: 3px solid rgba(184, 149, 90, 0.4);
+  border-left: 3px solid rgba(184, 149, 90, 0.55);
   background: rgba(255, 252, 248, 1.0);
 }
 .ai-loading p {
   font-size: 13px;
-  color: var(--text-light);
+  color: var(--text-mid);
   letter-spacing: 0.04em;
   font-style: italic;
   margin: 0;
@@ -879,14 +879,14 @@ body {
 }
 .ai-loading-sub {
   font-size: 11px !important;
-  color: var(--text-lighter, #aaa) !important;
+  color: var(--text-light) !important;
   margin-top: 6px !important;
   font-style: normal !important;
   animation: none !important;
 }
 @keyframes ai-pulse {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0.55; }
+  50%       { opacity: 0.72; }
 }
 
 .ai-error {
