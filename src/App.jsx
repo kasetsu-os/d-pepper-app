@@ -44,19 +44,19 @@ const EXIT_BUTTONS = {
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
     { label: "Da-isの予約メニューを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/coupon/" },
-    { label: "電話で相談する",               url: "tel:0888023370" },
+    { label: "店舗に電話する",               url: "tel:0888023370" },
   ],
   "頭皮の悩み": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
     { label: "Da-isの予約メニューを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/coupon/" },
-    { label: "電話で相談する",               url: "tel:0888023370" },
+    { label: "店舗に電話する",               url: "tel:0888023370" },
   ],
   "ダメージ・手触り相談": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
     { label: "Da-isの予約メニューを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/coupon/" },
-    { label: "電話で相談する",               url: "tel:0888023370" },
+    { label: "店舗に電話する",               url: "tel:0888023370" },
   ],
   "疲れ・気分・リラックス": [
     { label: "もう少し相談する",              action: "more" },
@@ -68,36 +68,36 @@ const EXIT_BUTTONS = {
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
     { label: "Da-isの予約メニューを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/coupon/" },
-    { label: "電話で相談する",               url: "tel:0888023370" },
+    { label: "店舗に電話する",               url: "tel:0888023370" },
   ],
   "メニュー・予約前の迷い": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
     { label: "Da-isの予約メニューを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/coupon/" },
-    { label: "電話で相談する",               url: "tel:0888023370" },
+    { label: "店舗に電話する",               url: "tel:0888023370" },
   ],
   "商品相談": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
     { label: "Da-isの予約メニューを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/coupon/" },
-    { label: "電話で相談する",               url: "tel:0888023370" },
+    { label: "店舗に電話する",               url: "tel:0888023370" },
   ],
   "美容師・見学希望": [
     { label: "Instagramを見る",              url: "https://www.instagram.com/dais.kochi/" },
     { label: "noteを見る",                   url: "https://note.com/da_is1119" },
-    { label: "電話で問い合わせる",           url: "tel:0888023370" },
+    { label: "店舗に問い合わせる",           url: "tel:0888023370" },
   ],
   "円形脱毛症の相談": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
     { label: "Da-isの予約メニューを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/coupon/" },
-    { label: "電話で相談する",               url: "tel:0888023370" },
+    { label: "店舗に電話する",               url: "tel:0888023370" },
   ],
   "薄毛・抜け毛の相談": [
     { label: "もう少し相談する",              action: "more" },
     { label: "来店時に伝えるメモを見る",      action: "history" },
     { label: "Da-isの予約メニューを開く",         url: "https://beauty.hotpepper.jp/slnH000166332/coupon/" },
-    { label: "電話で相談する",               url: "tel:0888023370" },
+    { label: "店舗に電話する",               url: "tel:0888023370" },
   ],
 };
 
@@ -944,9 +944,9 @@ function App() {
                       <div className="exit-buttons">
                         <div className="exit-btn-list">
                           <a href="tel:0888023370" target="_self" className="exit-btn">
-                            電話で相談する
+                            店舗に電話する
                           </a>
-                          <p className="phone-hours-note">電話受付時間：10:00〜17:00</p>
+                          <p className="phone-hours-note">店舗電話受付：10:00〜17:00</p>
                         </div>
                       </div>
                     </>
@@ -1077,7 +1077,7 @@ function App() {
                                 </div>
                               )}
                               {urlBtns.some(b => b.url.startsWith("tel:")) && (
-                                <p className="phone-hours-note">電話受付時間：10:00〜17:00</p>
+                                <p className="phone-hours-note">店舗電話受付：10:00〜17:00</p>
                               )}
                             </div>
                           </div>
@@ -1098,7 +1098,7 @@ function App() {
                               この相談内容をDa-isに共有しますか？<br />
                               共有すると、相談内容がDa-isのお店用メールに送信されます。<br />
                               返信を希望する場合は、共有フォーム内で返信先を入力してください。<br />
-                              お急ぎの場合は、お電話（10:00〜17:00）をご利用ください。
+                              お急ぎの場合は、店舗へお電話ください（受付10:00〜17:00）。
                             </p>
                             <p className="share-confirm-hint">
                               フォームには、この相談内容の一部が自動入力されます。<br />
