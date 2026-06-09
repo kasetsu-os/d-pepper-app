@@ -398,6 +398,7 @@ function App() {
   const resultCardRef = useRef(null);
   const aiAreaRef = useRef(null);
   const aiRequestIdRef = useRef(0);
+  const lastEncodedImagesRef = useRef([]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(consultations));
@@ -548,6 +549,7 @@ function App() {
       setLoadingWithImages(imagesToEncode.length > 0);
       const requestId = ++aiRequestIdRef.current;
       const encodedImages = (await encodedImagesPromise).filter(Boolean);
+      lastEncodedImagesRef.current = encodedImages;
       console.log("Encoded images count:", encodedImages.length);
       console.log("Encoded image mimeTypes:", encodedImages.map((img) => img.mimeType));
       try {
@@ -599,6 +601,45 @@ function App() {
       } finally {
         if (requestId === aiRequestIdRef.current) setAiLoading(false);
       }
+    }
+  }
+
+  async function handleRetryAI() {
+    if (!lastResult || aiLoading) return;
+    const retryImages = lastEncodedImagesRef.current;
+    const retryUrls = lastResult.attachedUrls ?? [];
+    setAiError(null);
+    setAiLoading(true);
+    setLoadingWithImages(retryImages.length > 0);
+    const requestId = ++aiRequestIdRef.current;
+    try {
+      const prompt = buildDpepperPrompt({
+        text: lastResult.text,
+        category: lastResult.category,
+        group: lastResult.group,
+        summary: lastResult.summary,
+        guidance: lastResult.guidance,
+        entryTitle: currentEntry?.title ?? "",
+        isContinuing: false,
+        hasImages: retryImages.length > 0,
+      });
+      const aiText = await askGemini(prompt, retryUrls, retryImages);
+      if (requestId === aiRequestIdRef.current) {
+        let cleaned = aiText.replace(/^\s*#{1,6}\s*/gm, "").trim();
+        const hasMarkdown = /^\s*#{1,6}/m.test(cleaned);
+        const isComplete = cleaned.endsWith("。") || cleaned.endsWith("！") || cleaned.endsWith("？");
+        if (hasMarkdown || !isComplete) {
+          cleaned = "こんにちは、Da-isの髪と頭皮の相談所『Dペッパー』です。ご相談の内容を拝見しました。気になっている状態を、もう少し具体的に書いていただくと、整理しやすくなります。";
+        }
+        setAiResponse(cleaned);
+      }
+    } catch (err) {
+      if (requestId === aiRequestIdRef.current) {
+        console.error("Gemini retry error:", err);
+        setAiError(err.message ?? "応答を取得できませんでした。");
+      }
+    } finally {
+      if (requestId === aiRequestIdRef.current) setAiLoading(false);
     }
   }
 
@@ -918,6 +959,23 @@ function App() {
                           <div className="ai-error">
                             <p>AI応答を取得できませんでした。</p>
                             <p>時間をおいてもう一度試すか、相談内容をDa-isに共有していただくと、お店側で確認しやすくなります。</p>
+                            <div className="ai-error-actions">
+                              <button
+                                type="button"
+                                className="retry-ai-btn"
+                                onClick={handleRetryAI}
+                                disabled={aiLoading}
+                              >
+                                もう一度AI応答を試す
+                              </button>
+                              <button
+                                type="button"
+                                className="retry-share-btn"
+                                onClick={() => setShowShareConfirm(true)}
+                              >
+                                Da-isに相談内容を共有する
+                              </button>
+                            </div>
                           </div>
                         )}
                         {!aiLoading && !aiResponse && !aiError && lastResult.guidance && (
