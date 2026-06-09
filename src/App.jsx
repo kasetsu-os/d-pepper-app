@@ -740,12 +740,49 @@ function App() {
         {/* ホームビュー */}
         {!selectedEntry && (
           <section className="home-view">
-            <div className="hero">
-              <h1><ruby>Da-is<rt>デイズ</rt></ruby>の相談所へようこそ。</h1>
-              <div className="deco-line">
-                <span className="deco-diamond" />
+            {/* サービス紹介ブロック */}
+            <div className="intro-block">
+              <span className="intro-badge"><ruby>Da-is<rt>デイズ</rt></ruby>公式</span>
+              <h1 className="intro-heading">
+                髪と頭皮のWEB相談所<br />
+                <span className="intro-heading-name">Dペッパー</span>
+              </h1>
+              <div className="intro-desc-wrap">
+                <p className="intro-desc">
+                  Dペッパーは、<ruby>Da-is<rt>デイズ</rt></ruby>がお客様と一緒に育んでいくWEB相談所です。
+                  髪や頭皮の悩み、ヘアスタイルやカラー、今お使いの商品について、来店前に少し整理したい時にご利用ください。
+                </p>
+                <p className="intro-desc">
+                  AIの力も借りながら、<ruby>Da-is<rt>デイズ</rt></ruby>の現場で大切にしている考え方をもとに、相談内容を整理します。
+                  気になる内容は、来店時にスタッフへそのまま見せていただいて大丈夫です。
+                </p>
               </div>
-              <p>髪や頭皮の悩みを、少し言葉にしてみませんか。</p>
+            </div>
+
+            {/* 相談例ブロック */}
+            <div className="consult-examples">
+              <p className="consult-examples-label">こんな相談ができます</p>
+              <div className="consult-examples-list">
+                {[
+                  { num: "1", title: "髪や頭皮の悩みを相談したい", detail: "かゆみ、抜け毛、広がり、寝癖、湿気でまとまらない" },
+                  { num: "2", title: "お使いの商品について相談したい", detail: "シャンプー、トリートメント、オイル、成分表、使った後の重さ" },
+                  { num: "3", title: "ヘアスタイルやカラーを相談したい", detail: "参考画像、URL、色味、白髪ぼかし、カラー持ち" },
+                ].map(({ num, title, detail }) => (
+                  <div key={num} className="consult-example-card">
+                    <span className="consult-example-num">{num}</span>
+                    <div className="consult-example-text">
+                      <p className="consult-example-title">{title}</p>
+                      <p className="consult-example-detail">例：{detail}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="consult-note">写真・URL・言葉だけでも相談できます。相談内容は、来店時の共有メモとしても使えます。</p>
+              <p className="consult-caution">Dペッパーの返答は、来店前に悩みを整理するための参考です。<br />髪や頭皮の状態は、来店時にスタッフが直接確認します。</p>
+            </div>
+
+            <div className="deco-line">
+              <span className="deco-diamond" />
             </div>
             <div className="entry-list">
               {ENTRIES.map((entry) => (

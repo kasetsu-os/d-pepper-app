@@ -327,6 +327,74 @@ body {
 .deco-diamond { width: 6px; height: 6px; background: var(--gold-light); transform: rotate(45deg); flex-shrink: 0; }
 .hero p { font-size: 13px; font-weight: 300; color: var(--text-light); letter-spacing: 0.18em; }
 
+/* ── サービス紹介ブロック ── */
+.intro-block {
+  text-align: center; margin-bottom: 36px;
+  animation: fadeUp 0.55s ease both;
+}
+.intro-badge {
+  display: inline-block;
+  padding: 3px 14px; margin-bottom: 16px;
+  border: 1px solid rgba(184,149,90,0.38);
+  border-radius: 100px;
+  background: rgba(184,149,90,0.07);
+  font-size: 10px; font-weight: 400; letter-spacing: 0.22em;
+  color: var(--gold-mid);
+}
+.intro-heading {
+  font-family: 'Noto Serif JP', serif;
+  font-size: clamp(19px, 5vw, 26px); font-weight: 300;
+  color: var(--text-dark); letter-spacing: 0.08em; line-height: 1.55;
+  margin-bottom: 20px;
+}
+.intro-heading-name {
+  font-size: clamp(22px, 6vw, 30px); font-weight: 400;
+  letter-spacing: 0.16em; color: var(--text-dark);
+}
+.intro-desc-wrap { display: flex; flex-direction: column; gap: 10px; }
+.intro-desc {
+  font-size: 13px; font-weight: 300; line-height: 1.85;
+  color: var(--text-mid); letter-spacing: 0.06em; text-align: left;
+}
+
+/* ── 相談例ブロック ── */
+.consult-examples { margin-bottom: 36px; animation: fadeUp 0.65s 0.1s ease both; }
+.consult-examples-label {
+  font-size: 11px; font-weight: 400; letter-spacing: 0.22em;
+  color: var(--text-light); text-align: center; margin-bottom: 14px;
+}
+.consult-examples-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.consult-example-card {
+  display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px;
+  background: rgba(255,252,248,0.72); border: 1px solid rgba(184,149,90,0.16);
+  border-radius: 10px; backdrop-filter: blur(6px);
+}
+.consult-example-num {
+  flex-shrink: 0; width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; border: 1px solid rgba(184,149,90,0.4);
+  font-size: 11px; font-weight: 400; color: var(--gold-mid);
+  margin-top: 1px;
+}
+.consult-example-text { display: flex; flex-direction: column; gap: 4px; }
+.consult-example-title {
+  font-size: 13px; font-weight: 400; color: var(--text-dark); letter-spacing: 0.04em;
+}
+.consult-example-detail {
+  font-size: 11px; font-weight: 300; color: var(--text-light); letter-spacing: 0.04em; line-height: 1.6;
+}
+.consult-note {
+  font-size: 12px; font-weight: 300; color: var(--text-mid);
+  letter-spacing: 0.06em; line-height: 1.7; text-align: center;
+  margin-bottom: 10px;
+}
+.consult-caution {
+  font-size: 11px; font-weight: 300; color: var(--text-light);
+  letter-spacing: 0.04em; line-height: 1.75; text-align: center;
+  padding: 10px 14px; background: rgba(255,252,248,0.5);
+  border: 1px solid rgba(184,149,90,0.12); border-radius: 8px;
+}
+
 .entry-list { display: flex; flex-direction: column; gap: 14px; width: 100%; }
 .entry-card {
   display: flex; align-items: center; gap: 18px; padding: 20px 22px;
@@ -1082,6 +1150,15 @@ body {
   .hero { margin-bottom: 24px; }
   .hero h1 { font-size: clamp(18px, 5.5vw, 24px); margin-bottom: 12px; }
   .hero p  { font-size: 12px; }
+  .intro-block { margin-bottom: 28px; }
+  .intro-heading { font-size: clamp(17px, 5vw, 22px); }
+  .intro-heading-name { font-size: clamp(20px, 5.5vw, 26px); }
+  .intro-desc { font-size: 12px; }
+  .consult-examples { margin-bottom: 28px; }
+  .consult-example-title { font-size: 12px; }
+  .consult-example-detail { font-size: 11px; }
+  .consult-note { font-size: 11px; }
+  .consult-caution { font-size: 11px; }
 
   .entry-list { gap: 11px; }
   .entry-card { padding: 14px 13px; gap: 12px; }
