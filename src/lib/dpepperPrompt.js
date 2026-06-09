@@ -4,6 +4,7 @@ import {
   careRules,
   designRules,
   colorRetentionRules,
+  bedheadRules,
   imageTranslationRules,
   bannedPhrases,
   preferredPhrases,
@@ -14,10 +15,12 @@ export function buildDpepperPrompt({ text, category, group, summary, guidance, e
   const appliedRuleNames = ["commonRules", "bannedPhrases", "preferredPhrases"];
   console.log("[DPEPPER PROMPT] hasImages:", hasImages, "| group:", group, "| category:", category);
   const isColorConsult = category === "カラー相談" || /色持ち|退色|色落ち|カラー持ち|トリートメント持ち|色が抜け|色が変わ|すぐ落ち|すぐ明るく|すぐ黄色|すぐ赤く|黄色っぽ|赤みが出|染めた時と違|持ちが悪|トリートメントが取れ|手触りが戻|パサつきが戻|ツヤがなくな/.test(text);
+  const isBedheadConsult = /寝癖|寝ぐせ|跳ねる|はねる|朝はね|毛先がはね|根元がつぶれ|ボリュームがつぶれ|朝まとまらない|寝ると変|うねる|朝のセット|髪が広がる|湿気でまとまらない|寝汗/.test(text);
   if (group.includes("頭皮"))   { categoryRulesParts.push(scalpRules);  appliedRuleNames.push("scalpRules"); }
   if (group.includes("ケア"))   { categoryRulesParts.push(careRules);   appliedRuleNames.push("careRules"); }
   if (group.includes("デザイン") || hasImages) { categoryRulesParts.push(designRules); appliedRuleNames.push("designRules"); }
   if (isColorConsult) { categoryRulesParts.push(colorRetentionRules); appliedRuleNames.push("colorRetentionRules"); }
+  if (isBedheadConsult) { categoryRulesParts.push(bedheadRules); appliedRuleNames.push("bedheadRules"); }
   if (hasImages || group.includes("デザイン")) { categoryRulesParts.push(imageTranslationRules); appliedRuleNames.push("imageTranslationRules"); }
   console.log("[DPEPPER PROMPT] applied rules:", appliedRuleNames.join(", "));
   const categoryRulesText = categoryRulesParts.join("\n\n");
