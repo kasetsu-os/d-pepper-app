@@ -132,19 +132,19 @@ function classifyConsult(text) {
       nextAction: "以下からご希望の案内先をお選びください。",
     };
 
-  /* ─── ケア ─── */
-  if (v.includes("シャンプー") || v.includes("トリートメント") || v.includes("ミルボン") || v.includes("オージュア") || v.includes("オイル") || v.includes("商品") || v.includes("アウトバス") || v.includes("ホームケア") || v.includes("市販"))
+  /* ─── デザイン（ケア・商品より先に判定） ─── */
+  if (v.includes("カラー") || v.includes("染め") || v.includes("ハイライト") || v.includes("バレイヤージュ") || v.includes("インナーカラー") || v.includes("グラデーション") || v.includes("ブリーチ") || v.includes("アッシュ") || v.includes("ベージュ") || v.includes("明るく") || v.includes("暗く") || v.includes("色味") || v.includes("透明感") || v.includes("韓国") || v.includes("外国人風") || v.includes("ヘアカラー") || v.includes("色落ち") || v.includes("暖色") || v.includes("寒色") || v.includes("ピンク") || v.includes("ラベンダー") || v.includes("ブルー") || v.includes("グリーン") || v.includes("オレンジ") || v.includes("ヴァイオレット"))
     return {
-      category: "商品相談", group: "ケア",
-      summary: "ホームケア商品や使い方に関する相談として記録しました。",
-      guidance: "シャンプーやトリートメントは成分名だけでなく、使用感・蓄積感・乾きにくさ・重さ・数週間使った変化で選ぶことが大切です。オージュアを基本軸にしつつ、市販品についても一般的な観点でご相談を受けられます。",
-      nextAction: "以下からご希望の案内先をお選びください。",
+      category: "カラー相談", group: "デザイン",
+      summary: "ヘアカラーに関する相談として記録しました。",
+      guidance: "カラーの仕上がりはもとの髪の明るさ・色・ダメージ状態によって変わります。理想のイメージを写真や言葉でお聞かせいただき、実際の髪の状態と照らし合わせてご提案します。",
+      nextAction: "この内容は、来店時のメモや予約時の備考にも使えます。直接相談したい場合は、予約ページやお電話もご利用ください。",
     };
-  if (v.includes("ダメージ") || v.includes("傷んだ") || v.includes("傷んで") || v.includes("傷み") || v.includes("痛んだ") || v.includes("枝毛") || v.includes("切れ毛") || v.includes("パサパサ") || v.includes("パサつ") || v.includes("ゴワつ") || v.includes("ゴワゴワ") || v.includes("絡まる") || v.includes("絡まり") || v.includes("引っかかる") || v.includes("手触り") || v.includes("まとまらない") || v.includes("広がり") || v.includes("ツヤ") || v.includes("ハリ") || v.includes("コシ"))
+  if (v.includes("カット") || v.includes("似合う") || v.includes("似合わせ") || v.includes("顔型") || v.includes("ショート") || v.includes("ボブ") || v.includes("前髪") || v.includes("ストレート") || v.includes("長さ") || v.includes("ヘアスタイル") || v.includes("髪型") || v.includes("なりたい") || v.includes("にしたい") || v.includes("スタイル"))
     return {
-      category: "ダメージ・手触り相談", group: "ケア",
-      summary: "髪のダメージやケアに関する相談として記録しました。",
-      guidance: "ダメージはキューティクルから深部へ進行します。ケアは深部から表面へ整える方向です。「補修」は不足分を補い扱いやすく整えること、「予防」は摩擦・熱・洗髪による今後の流出を抑えることです。成分名より使用感と蓄積の変化で判断することをおすすめします。",
+      category: "カット・似合わせ相談", group: "デザイン",
+      summary: "カットやヘアスタイルの似合わせに関する相談として記録しました。",
+      guidance: "「似合う長さ」は存在しませんが、「似合うバランス」は存在します。顔型診断だけで断定せず、顔まわりの余白・肌面積・シルエット・重心・眉・目元・メイク・服装・なりたいイメージとのバランスで考えます。",
       nextAction: "この内容は、来店時のメモや予約時の備考にも使えます。直接相談したい場合は、予約ページやお電話もご利用ください。",
     };
 
@@ -164,19 +164,19 @@ function classifyConsult(text) {
       nextAction: "この内容は、来店時のメモや予約時の備考にも使えます。直接相談したい場合は、予約ページやお電話もご利用ください。",
     };
 
-  /* ─── デザイン ─── */
-  if (v.includes("カラー") || v.includes("染め") || v.includes("ハイライト") || v.includes("バレイヤージュ") || v.includes("インナーカラー") || v.includes("グラデーション") || v.includes("ブリーチ") || v.includes("アッシュ") || v.includes("ベージュ") || v.includes("明るく") || v.includes("暗く"))
+  /* ─── ケア ─── */
+  if (v.includes("シャンプー") || v.includes("トリートメント") || v.includes("ミルボン") || v.includes("オージュア") || v.includes("オイル") || v.includes("商品") || v.includes("アウトバス") || v.includes("ホームケア") || v.includes("市販"))
     return {
-      category: "カラー相談", group: "デザイン",
-      summary: "ヘアカラーに関する相談として記録しました。",
-      guidance: "カラーの仕上がりはもとの髪の明るさ・色・ダメージ状態によって変わります。理想のイメージを写真や言葉でお聞かせいただき、実際の髪の状態と照らし合わせてご提案します。",
-      nextAction: "この内容は、来店時のメモや予約時の備考にも使えます。直接相談したい場合は、予約ページやお電話もご利用ください。",
+      category: "商品相談", group: "ケア",
+      summary: "ホームケア商品や使い方に関する相談として記録しました。",
+      guidance: "シャンプーやトリートメントは成分名だけでなく、使用感・蓄積感・乾きにくさ・重さ・数週間使った変化で選ぶことが大切です。オージュアを基本軸にしつつ、市販品についても一般的な観点でご相談を受けられます。",
+      nextAction: "以下からご希望の案内先をお選びください。",
     };
-  if (v.includes("カット") || v.includes("似合う") || v.includes("似合わせ") || v.includes("顔型") || v.includes("ショート") || v.includes("ボブ") || v.includes("前髪") || v.includes("ストレート") || v.includes("長さ"))
+  if (v.includes("ダメージ") || v.includes("傷んだ") || v.includes("傷んで") || v.includes("傷み") || v.includes("痛んだ") || v.includes("枝毛") || v.includes("切れ毛") || v.includes("パサパサ") || v.includes("パサつ") || v.includes("ゴワつ") || v.includes("ゴワゴワ") || v.includes("絡まる") || v.includes("絡まり") || v.includes("引っかかる") || v.includes("手触り") || v.includes("まとまらない") || v.includes("広がり") || v.includes("ツヤ") || v.includes("ハリ") || v.includes("コシ"))
     return {
-      category: "カット・似合わせ相談", group: "デザイン",
-      summary: "カットやヘアスタイルの似合わせに関する相談として記録しました。",
-      guidance: "「似合う長さ」は存在しませんが、「似合うバランス」は存在します。顔型診断だけで断定せず、顔まわりの余白・肌面積・シルエット・重心・眉・目元・メイク・服装・なりたいイメージとのバランスで考えます。",
+      category: "ダメージ・手触り相談", group: "ケア",
+      summary: "髪のダメージやケアに関する相談として記録しました。",
+      guidance: "ダメージはキューティクルから深部へ進行します。ケアは深部から表面へ整える方向です。「補修」は不足分を補い扱いやすく整えること、「予防」は摩擦・熱・洗髪による今後の流出を抑えることです。成分名より使用感と蓄積の変化で判断することをおすすめします。",
       nextAction: "この内容は、来店時のメモや予約時の備考にも使えます。直接相談したい場合は、予約ページやお電話もご利用ください。",
     };
 
@@ -596,9 +596,16 @@ function App() {
             const hasUrl = savedUrls.length > 0;
             const hasImg = encodedImages.length > 0;
             const what = hasUrl && hasImg ? "URLや画像の内容まで" : hasImg ? "画像の内容は十分に" : "URLの内容まで";
-            const fallback = wasContinuing
-              ? `続きですね。${what}は確認できませんでしたが、シャンプーやトリートメントは成分名だけでなく、使った後の重さ・乾きにくさ・ベタつき・数週間使った変化を見ることが大切です。今の髪や頭皮の状態と合わせて整理できます。`
-              : `こんにちは、Da-isの髪と頭皮の相談所『Dペッパー』です。${what}は確認できませんでしたが、シャンプーやトリートメントは成分名だけでなく、使った後の重さ・乾きにくさ・ベタつき・数週間使った変化を見ることが大切です。商品だけで合う合わないを決めず、今の髪や頭皮の状態と合わせて整理できます。`;
+            let fallback;
+            if (wasContinuing) {
+              fallback = `続きですね。${what}は確認できませんでしたが、書いていただいた内容をもとに整理します。気になる変化があれば、続けて書いてみてください。`;
+            } else if (result.group === "デザイン" || result.group === "ケア・デザイン" || encodedImages.length > 0) {
+              fallback = `こんにちは、Da-isの髪と頭皮の相談所『Dペッパー』です。${what}は確認できませんでしたが、ヘアスタイルやカラーの相談として整理します。理想の雰囲気・色味・スタイルのイメージを来店時に画像や言葉でお伝えいただくと、状態に合わせた方向を一緒に考えやすくなります。`;
+            } else if (result.group === "ケア") {
+              fallback = `こんにちは、Da-isの髪と頭皮の相談所『Dペッパー』です。${what}は確認できませんでしたが、シャンプーやトリートメントは成分名だけでなく、使った後の重さ・乾きにくさ・ベタつき・数週間使った変化を見ることが大切です。商品だけで合う合わないを決めず、今の髪や頭皮の状態と合わせて整理できます。`;
+            } else {
+              fallback = `こんにちは、Da-isの髪と頭皮の相談所『Dペッパー』です。${what}は確認できませんでしたが、相談文をもとに整理します。気になる状態をもう少し具体的に書いていただくと、整理しやすくなります。`;
+            }
             setAiResponse(fallback);
           } else {
             setAiError(err.message ?? "応答を取得できませんでした。");

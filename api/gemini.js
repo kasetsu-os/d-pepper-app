@@ -140,6 +140,7 @@ export async function POST(request) {
 
     console.log("URL readable count:", readableResults.length);
     console.log("URL unreadable count:", unreadableResults.length);
+    unreadableResults.forEach((r) => console.log(`URL unreadable | host: ${(() => { try { return new URL(r.normalizedUrl || r.originalUrl).hostname; } catch { return r.originalUrl; } })()} | error: ${r.error}`));
 
     if (readableResults.length === 0) {
       urlStatus = "unreadable";
