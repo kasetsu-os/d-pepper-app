@@ -390,11 +390,13 @@ function App() {
   const [aiResponse, setAiResponse] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
+  const [loadingWithImages, setLoadingWithImages] = useState(false);
   const [fontSize, setFontSize] = useState(() => localStorage.getItem(FONT_SIZE_KEY) || "medium");
   const [showShareConfirm, setShowShareConfirm] = useState(false);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
   const resultCardRef = useRef(null);
+  const aiAreaRef = useRef(null);
   const aiRequestIdRef = useRef(0);
 
   useEffect(() => {
@@ -415,6 +417,22 @@ function App() {
       }, 60);
     }
   }, [lastResult]);
+
+  useEffect(() => {
+    if (!aiLoading) return;
+    const timer = setTimeout(() => {
+      aiAreaRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [aiLoading]);
+
+  useEffect(() => {
+    if (!aiResponse) return;
+    const timer = setTimeout(() => {
+      aiAreaRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 60);
+    return () => clearTimeout(timer);
+  }, [aiResponse]);
 
   useEffect(() => {
     localStorage.setItem(FONT_SIZE_KEY, fontSize);
@@ -527,6 +545,7 @@ function App() {
     setAiError(null);
     if (result.category !== "__complaint__") {
       setAiLoading(true);
+      setLoadingWithImages(imagesToEncode.length > 0);
       const requestId = ++aiRequestIdRef.current;
       const encodedImages = (await encodedImagesPromise).filter(Boolean);
       console.log("Encoded images count:", encodedImages.length);
@@ -540,6 +559,7 @@ function App() {
           guidance: result.guidance,
           entryTitle: currentEntry.title,
           isContinuing: wasContinuing,
+          hasImages: encodedImages.length > 0,
         });
         const aiText = await askGemini(prompt, savedUrls, encodedImages);
         if (requestId === aiRequestIdRef.current) {
@@ -881,24 +901,32 @@ function App() {
                         </span>
                       )}
                       <p>{lastResult.summary}</p>
-                      {aiLoading && (
-                        <div className="ai-loading">Dペッパーが相談内容を整理しています…</div>
-                      )}
-                      {!aiLoading && aiResponse && (
-                        <div className="ai-response">
-                          <span className="result-label">Dペッパーより</span>
-                          <p>{aiResponse}</p>
-                        </div>
-                      )}
-                      {!aiLoading && !aiResponse && lastResult.guidance && (
-                        <div className="next-action">
-                          <span>考え方</span>
-                          <p>{lastResult.guidance}</p>
-                        </div>
-                      )}
-                      {aiError && (
-                        <p style={{ fontSize: "11px", color: "var(--text-light)", marginTop: "6px" }}>※AI応答を取得できませんでした</p>
-                      )}
+                      <div ref={aiAreaRef}>
+                        {aiLoading && (
+                          <div className="ai-loading">
+                            <p>{loadingWithImages ? "画像を確認しながら相談内容を整理しています" : "相談内容を整理しています"}</p>
+                            <p className="ai-loading-sub">{loadingWithImages ? "画像やURLがある場合は、少し時間がかかることがあります。" : "少し時間がかかることがあります。"}画面を閉じずにお待ちください。</p>
+                          </div>
+                        )}
+                        {!aiLoading && aiResponse && (
+                          <div className="ai-response">
+                            <span className="result-label">Dペッパーより</span>
+                            <p>{aiResponse}</p>
+                          </div>
+                        )}
+                        {!aiLoading && !aiResponse && aiError && (
+                          <div className="ai-error">
+                            <p>AI応答を取得できませんでした。</p>
+                            <p>時間をおいてもう一度試すか、相談内容をDa-isに共有していただくと、お店側で確認しやすくなります。</p>
+                          </div>
+                        )}
+                        {!aiLoading && !aiResponse && !aiError && lastResult.guidance && (
+                          <div className="next-action">
+                            <span>考え方</span>
+                            <p>{lastResult.guidance}</p>
+                          </div>
+                        )}
+                      </div>
                       <div className="next-action" style={{ marginTop: "10px" }}>
                         <span>次の案内</span>
                         <p>{lastResult.nextAction}</p>

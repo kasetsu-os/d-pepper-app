@@ -848,12 +848,43 @@ body {
 .ai-loading {
   padding: 14px 16px;
   border-radius: 10px;
-  border-left: 3px solid rgba(184, 149, 90, 0.28);
+  border-left: 3px solid rgba(184, 149, 90, 0.4);
   background: rgba(255, 252, 248, 1.0);
+}
+.ai-loading p {
   font-size: 13px;
   color: var(--text-light);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   font-style: italic;
+  margin: 0;
+  animation: ai-pulse 2s ease-in-out infinite;
+}
+.ai-loading-sub {
+  font-size: 11px !important;
+  color: var(--text-lighter, #aaa) !important;
+  margin-top: 6px !important;
+  font-style: normal !important;
+  animation: none !important;
+}
+@keyframes ai-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+
+.ai-error {
+  padding: 12px 16px;
+  border-radius: 10px;
+  border-left: 3px solid rgba(180, 100, 80, 0.35);
+  background: rgba(255, 250, 248, 1.0);
+}
+.ai-error p {
+  font-size: 12px;
+  color: var(--text-light);
+  margin: 0;
+  line-height: 1.7;
+}
+.ai-error p + p {
+  margin-top: 4px;
 }
 
 .ai-response {

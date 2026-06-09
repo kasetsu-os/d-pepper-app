@@ -3,16 +3,18 @@ import {
   scalpRules,
   careRules,
   designRules,
+  imageTranslationRules,
   bannedPhrases,
   preferredPhrases,
 } from "./dpepperRules.js";
 
-export function buildDpepperPrompt({ text, category, group, summary, guidance, entryTitle, isContinuing = false }) {
+export function buildDpepperPrompt({ text, category, group, summary, guidance, entryTitle, isContinuing = false, hasImages = false }) {
   const categoryRulesParts = [];
   const appliedRuleNames = ["commonRules", "bannedPhrases", "preferredPhrases"];
   if (group.includes("頭皮"))   { categoryRulesParts.push(scalpRules);  appliedRuleNames.push("scalpRules"); }
   if (group.includes("ケア"))   { categoryRulesParts.push(careRules);   appliedRuleNames.push("careRules"); }
   if (group.includes("デザイン")) { categoryRulesParts.push(designRules); appliedRuleNames.push("designRules"); }
+  if (hasImages || group.includes("デザイン")) { categoryRulesParts.push(imageTranslationRules); appliedRuleNames.push("imageTranslationRules"); }
   console.log("Dペッパー applied rules:", appliedRuleNames.join(", "));
   console.log("Dペッパー group:", group, "/ category:", category, "/ isContinuing:", isContinuing);
   const categoryRulesText = categoryRulesParts.join("\n\n");
@@ -27,7 +29,8 @@ ${preferredPhrases}
 【今回の分類】
 入口：${entryTitle} / カテゴリ：${category} / 分類：${group}
 整理：${summary}
-判断メモ：${guidance}
+判断メモ：${guidance}${(hasImages || group.includes("デザイン")) ? `
+画像添付：${hasImages ? "あり（画像から見える範囲を参考にしてよい。「この画像は」「貼っていただいた画像を参考にすると」などの表現を使う）" : "なし（「この画像は」「貼っていただいた画像」などの画像言及表現は使わない。言葉のズレ整理と担当美容師メモの観点のみ適用）"}` : ""}
 
 【相談文】
 ${text}

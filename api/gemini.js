@@ -1,3 +1,57 @@
+const NO_RETRY_STATUSES = new Set([400, 401, 403]);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function fetchGemini(apiUrl, requestBody, hasImages) {
+  const timeoutMs = hasImages ? 45000 : 30000;
+  const retryDelays = [1000, 2000];
+  const maxAttempts = 3;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+
+      if (res.ok) return { ok: true, res };
+
+      const errBody = await res.json().catch(() => ({}));
+      const message = errBody?.error?.message ?? "(no message)";
+      const status = errBody?.error?.status ?? res.status;
+      console.error(`Gemini API error | attempt ${attempt}/${maxAttempts} | HTTP ${res.status} | ${status} – ${message}`);
+
+      if (NO_RETRY_STATUSES.has(res.status)) {
+        return { ok: false, error: `Gemini API error: ${res.status} ${status} – ${message}`, httpStatus: res.status };
+      }
+      if (attempt < maxAttempts) {
+        await sleep(retryDelays[attempt - 1]);
+        continue;
+      }
+      return { ok: false, error: `Gemini API error: ${res.status} ${status} – ${message}`, httpStatus: res.status };
+    } catch (err) {
+      clearTimeout(timer);
+      const isTimeout = err.name === "AbortError";
+      console.error(`Gemini fetch failed | attempt ${attempt}/${maxAttempts} | hasImages:${hasImages} | ${isTimeout ? "timeout" : err.message}`);
+
+      if (attempt < maxAttempts) {
+        await sleep(retryDelays[attempt - 1]);
+        continue;
+      }
+      return {
+        ok: false,
+        error: isTimeout ? "Gemini request timed out" : (err.message ?? "Fetch to Gemini failed"),
+        httpStatus: 500,
+      };
+    }
+  }
+}
+
 function normalizeUrl(rawUrl) {
   try {
     const u = new URL(rawUrl);
@@ -184,31 +238,13 @@ export async function POST(request) {
 
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
-  let geminiRes;
-  try {
-    geminiRes = await fetch(apiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(requestBody),
-    });
-  } catch (err) {
-    console.error("Fetch to Gemini failed:", err?.message);
-    return Response.json({ error: err.message ?? "Fetch to Gemini failed" }, { status: 500 });
+  console.log("Calling Gemini | parts:", parts.length, "| hasImages:", validImages.length > 0);
+  const geminiResult = await fetchGemini(apiUrl, requestBody, validImages.length > 0);
+  if (!geminiResult.ok) {
+    return Response.json({ error: geminiResult.error }, { status: geminiResult.httpStatus });
   }
 
-  if (!geminiRes.ok) {
-    const errBody = await geminiRes.json().catch(() => ({}));
-    console.error("Gemini API status:", geminiRes.status);
-    console.error("Gemini API error:", JSON.stringify(errBody));
-    const message = errBody?.error?.message ?? "(no message)";
-    const status = errBody?.error?.status ?? geminiRes.status;
-    return Response.json(
-      { error: `Gemini API error: ${geminiRes.status} ${status} – ${message}` },
-      { status: geminiRes.status }
-    );
-  }
-
-  const data = await geminiRes.json();
+  const data = await geminiResult.res.json();
 
   if (!data.candidates || data.candidates.length === 0) {
     console.error("Gemini: no candidates in response");
