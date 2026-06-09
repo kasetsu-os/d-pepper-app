@@ -374,14 +374,32 @@ body {
 
 .consult-view { width: 100%; animation: fadeUp 0.38s ease both; }
 
+.consult-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
 .back-button {
-  display: inline-flex; align-items: center; gap: 6px; margin-bottom: 22px;
+  display: inline-flex; align-items: center; gap: 6px;
   border: none; background: none; color: var(--text-light);
   font-size: 13px; font-weight: 300; letter-spacing: 0.10em;
   cursor: pointer; transition: color 0.2s;
 }
 .back-button:hover { color: var(--gold); }
 .back-button svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+.change-entry-btn {
+  border: none; background: none;
+  color: var(--text-lighter, #b0a898);
+  font-size: 11px; font-weight: 300; letter-spacing: 0.08em;
+  cursor: pointer; transition: color 0.2s;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(176, 168, 152, 0.45);
+}
+.change-entry-btn:hover { color: var(--gold); text-decoration-color: var(--gold); }
 
 .consult-card {
   background: var(--card-bg); border: 1px solid rgba(184,149,90,0.16);
@@ -1070,8 +1088,8 @@ body {
 
   .consult-card { padding: 20px 16px 18px; }
   .consult-badge { font-size: 10px; padding: 3px 12px; }
-  .consult-card h2 { font-size: 15px; }
-  .consult-sub { font-size: 12px; }
+  .consult-card h2 { font-size: 16px; }
+  .consult-sub { font-size: 13px; }
 
   .consult-card textarea {
     font-size: 16px; /* iOSの自動ズーム防止 */
@@ -1104,7 +1122,13 @@ body {
   .exit-btn-list { gap: 7px; }
 
   /* ── 送信ボタン ── */
-  .submit-button { min-height: 52px; font-size: 14px; }
+  .submit-button { min-height: 52px; font-size: 15px; }
+
+  /* ── 出口ボタン（主要アクション） ── */
+  .exit-btn { font-size: 13px; padding: 9px 14px; }
+
+  /* ── 相談入口変更 ── */
+  .change-entry-btn { font-size: 12px; }
 
   /* ── 結果カード ── */
   .result-card { padding: 16px 14px; margin-top: 16px; }

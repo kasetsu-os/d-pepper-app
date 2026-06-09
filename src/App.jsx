@@ -374,7 +374,12 @@ const SOCIAL_LINKS = [
 ];
 
 function App() {
-  const [selectedEntry, setSelectedEntry] = useState(null);
+  const USER_TYPE_KEY = "dpepper_user_type";
+  const [selectedEntry, setSelectedEntry] = useState(() => {
+    const saved = localStorage.getItem("dpepper_user_type");
+    const validIds = ["first", "regular", "stylist"];
+    return validIds.includes(saved) ? saved : null;
+  });
   const [input, setInput] = useState("");
   const [consultations, setConsultations] = useState(() => {
     try {
@@ -445,6 +450,7 @@ function App() {
   );
 
   function openEntry(id) {
+    localStorage.setItem("dpepper_user_type", id);
     setSelectedEntry(id);
     setInput("");
     setLastResult(null);
@@ -756,12 +762,24 @@ function App() {
         {/* 相談ビュー */}
         {selectedEntry && currentEntry && (
           <section className="consult-view">
-            <button type="button" className="back-button" onClick={goHome}>
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M19 12H5" /><path d="m11 6-6 6 6 6" />
-              </svg>
-              <span>戻る</span>
-            </button>
+            <div className="consult-nav">
+              <button type="button" className="back-button" onClick={goHome}>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M19 12H5" /><path d="m11 6-6 6 6 6" />
+                </svg>
+                <span>戻る</span>
+              </button>
+              <button
+                type="button"
+                className="change-entry-btn"
+                onClick={() => {
+                  localStorage.removeItem(USER_TYPE_KEY);
+                  goHome();
+                }}
+              >
+                相談入口を変更する
+              </button>
+            </div>
             <div className="consult-card">
               <div className="consult-badge">— {currentEntry.badge}</div>
               <h2>{currentEntry.label}</h2>
