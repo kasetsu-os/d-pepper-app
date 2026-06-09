@@ -7,6 +7,7 @@ import {
   bedheadRules,
   humidityDrynessRules,
   nutritionDietRules,
+  hairAgeChangeRules,
   imageTranslationRules,
   bannedPhrases,
   preferredPhrases,
@@ -27,6 +28,8 @@ export function buildDpepperPrompt({ text, category, group, summary, guidance, e
   if (isHumidityDrynessConsult) { categoryRulesParts.push(humidityDrynessRules); appliedRuleNames.push("humidityDrynessRules"); }
   const isNutritionDietConsult = /食べ物|栄養|何を食べたら|髪が生える|毛が生える|髪が伸びる|伸びやすい|早く伸ばしたい|サプリ|ビオチン|亜鉛|鉄分|タンパク質|プロテイン|ダイエット|食事制限|急に痩せた|抜け毛が増えた|髪が細くなった|ハリコシがなくなった|頭皮の栄養|栄養不足|数珠毛|ちぢれ毛/.test(text);
   if (isNutritionDietConsult) { categoryRulesParts.push(nutritionDietRules); appliedRuleNames.push("nutritionDietRules"); }
+  const isHairAgeChangeConsult = /子どもの頃|子供の頃|昔は直毛|昔は髪が多かった|髪質が変わった|大人になって変わった|年齢で変わった|髪が細くなった|ハリコシがない|うねりが出た|白髪が増えて髪質が変わった|産毛|うぶ毛|顔まわりの毛|生え際の毛|襟足の毛|赤ちゃんの頃から|赤ちゃんの時から|細い毛|切れ毛|新しく生えた毛/.test(text);
+  if (isHairAgeChangeConsult) { categoryRulesParts.push(hairAgeChangeRules); appliedRuleNames.push("hairAgeChangeRules"); }
   if (hasImages) { categoryRulesParts.push(imageTranslationRules); appliedRuleNames.push("imageTranslationRules"); }
   console.log("[DPEPPER PROMPT] hasImages:", hasImages, "| imageTranslationRules applied:", hasImages);
   console.log("[DPEPPER PROMPT] applied rules:", appliedRuleNames.join(", "));
