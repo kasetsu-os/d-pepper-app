@@ -9,6 +9,7 @@ import {
   nutritionDietRules,
   hairAgeChangeRules,
   grayHairMechanismRules,
+  grayHairCareRules,
   imageTranslationRules,
   bannedPhrases,
   preferredPhrases,
@@ -33,6 +34,8 @@ export function buildDpepperPrompt({ text, category, group, summary, guidance, e
   if (isHairAgeChangeConsult) { categoryRulesParts.push(hairAgeChangeRules); appliedRuleNames.push("hairAgeChangeRules"); }
   const isGrayHairMechanismConsult = /白髪が増えた|急に白髪|なぜ白髪|白くなる|黒髪が白く|ストレスで白髪|一晩で白髪|マリーアントワネット|マリー・アントワネット|白髪の原因|白髪のメカニズム|白髪を減らしたい|白髪をなくしたい|白髪が戻る|黒に戻る|若白髪|白髪ぼか/.test(text);
   if (isGrayHairMechanismConsult) { categoryRulesParts.push(grayHairMechanismRules); appliedRuleNames.push("grayHairMechanismRules"); }
+  const isGrayHairCareConsult = /白髪予防|白髪を防ぐ|白髪を減らしたい|白髪をなくしたい|白髪にいい食べ物|白髪に効く|白髪サプリ|白髪美容液|頭皮美容液|頭皮の栄養|血流|血行|頭皮マッサージ|予洗い|シャンプーの仕方|下から上|頭皮を動かす|帽状腱膜|頭頂部|白髪ケア/.test(text);
+  if (isGrayHairCareConsult) { categoryRulesParts.push(grayHairCareRules); appliedRuleNames.push("grayHairCareRules"); }
   if (hasImages) { categoryRulesParts.push(imageTranslationRules); appliedRuleNames.push("imageTranslationRules"); }
   console.log("[DPEPPER PROMPT] hasImages:", hasImages, "| imageTranslationRules applied:", hasImages);
   console.log("[DPEPPER PROMPT] applied rules:", appliedRuleNames.join(", "));
