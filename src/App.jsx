@@ -747,38 +747,29 @@ function App() {
                 髪と頭皮のWEB相談所<br />
                 <span className="intro-heading-name">Dペッパー</span>
               </h1>
-              <div className="intro-desc-wrap">
-                <p className="intro-desc">
-                  Dペッパーは、<ruby>Da-is<rt>デイズ</rt></ruby>がお客様と一緒に育んでいくWEB相談所です。
-                  髪や頭皮の悩み、ヘアスタイルやカラー、今お使いの商品について、来店前に少し整理したい時にご利用ください。
-                </p>
-                <p className="intro-desc">
-                  AIの力も借りながら、<ruby>Da-is<rt>デイズ</rt></ruby>の現場で大切にしている考え方をもとに、相談内容を整理します。
-                  気になる内容は、来店時にスタッフへそのまま見せていただいて大丈夫です。
-                </p>
-              </div>
+              <p className="intro-desc">
+                髪や頭皮の悩み、ヘアスタイルやカラー、今お使いの商品について、来店前に少し整理できる相談所です。
+                相談内容は、来店時にスタッフへそのまま見せていただけます。
+              </p>
+              <p className="intro-note">Dペッパーは、<ruby>Da-is<rt>デイズ</rt></ruby>がお客様の声をもとに育んでいくWEB相談所です。</p>
             </div>
 
-            {/* 相談例ブロック */}
+            {/* 相談例チップ */}
             <div className="consult-examples">
               <p className="consult-examples-label">こんな相談ができます</p>
-              <div className="consult-examples-list">
+              <div className="consult-chips">
                 {[
-                  { num: "1", title: "髪や頭皮の悩みを相談したい", detail: "かゆみ、抜け毛、広がり、寝癖、湿気でまとまらない" },
-                  { num: "2", title: "お使いの商品について相談したい", detail: "シャンプー、トリートメント、オイル、成分表、使った後の重さ" },
-                  { num: "3", title: "ヘアスタイルやカラーを相談したい", detail: "参考画像、URL、色味、白髪ぼかし、カラー持ち" },
-                ].map(({ num, title, detail }) => (
-                  <div key={num} className="consult-example-card">
-                    <span className="consult-example-num">{num}</span>
-                    <div className="consult-example-text">
-                      <p className="consult-example-title">{title}</p>
-                      <p className="consult-example-detail">例：{detail}</p>
-                    </div>
+                  { title: "髪や頭皮の悩み",  detail: "かゆみ・抜け毛・広がりなど" },
+                  { title: "お使いの商品",    detail: "シャンプー・オイル・成分表など" },
+                  { title: "スタイル・カラー", detail: "画像・URL・色味相談など" },
+                ].map(({ title, detail }) => (
+                  <div key={title} className="consult-chip">
+                    <p className="consult-chip-title">{title}</p>
+                    <p className="consult-chip-detail">{detail}</p>
                   </div>
                 ))}
               </div>
-              <p className="consult-note">写真・URL・言葉だけでも相談できます。相談内容は、来店時の共有メモとしても使えます。</p>
-              <p className="consult-caution">Dペッパーの返答は、来店前に悩みを整理するための参考です。<br />髪や頭皮の状態は、来店時にスタッフが直接確認します。</p>
+              <p className="consult-caution">返答は来店前に悩みを整理するための参考です。髪や頭皮の状態は、来店時にスタッフが直接確認します。</p>
             </div>
 
             <div className="deco-line">
