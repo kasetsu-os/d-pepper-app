@@ -3,6 +3,7 @@ import {
   scalpRules,
   careRules,
   designRules,
+  colorRetentionRules,
   imageTranslationRules,
   bannedPhrases,
   preferredPhrases,
@@ -12,9 +13,11 @@ export function buildDpepperPrompt({ text, category, group, summary, guidance, e
   const categoryRulesParts = [];
   const appliedRuleNames = ["commonRules", "bannedPhrases", "preferredPhrases"];
   console.log("[DPEPPER PROMPT] hasImages:", hasImages, "| group:", group, "| category:", category);
+  const isColorConsult = category === "カラー相談" || /色持ち|退色|色落ち|カラー持ち|トリートメント持ち/.test(text);
   if (group.includes("頭皮"))   { categoryRulesParts.push(scalpRules);  appliedRuleNames.push("scalpRules"); }
   if (group.includes("ケア"))   { categoryRulesParts.push(careRules);   appliedRuleNames.push("careRules"); }
   if (group.includes("デザイン") || hasImages) { categoryRulesParts.push(designRules); appliedRuleNames.push("designRules"); }
+  if (isColorConsult) { categoryRulesParts.push(colorRetentionRules); appliedRuleNames.push("colorRetentionRules"); }
   if (hasImages || group.includes("デザイン")) { categoryRulesParts.push(imageTranslationRules); appliedRuleNames.push("imageTranslationRules"); }
   console.log("[DPEPPER PROMPT] applied rules:", appliedRuleNames.join(", "));
   const categoryRulesText = categoryRulesParts.join("\n\n");
