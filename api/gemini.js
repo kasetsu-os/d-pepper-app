@@ -117,7 +117,9 @@ export async function POST(request) {
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { prompt, urls = [], images = [] } = body;
+  const { prompt, urls = [], images = [], mode = "customer" } = body;
+  const ts = new Date().toISOString();
+  console.log(`[${ts}] Gemini request | mode:${mode} | images:${Array.isArray(images) ? images.length : 0} | urls:${Array.isArray(urls) ? urls.length : 0}`);
   console.log("Prompt exists:", Boolean(prompt));
   console.log("Prompt length:", prompt?.length || 0);
   console.log("Received images count:", images?.length || 0);
@@ -250,6 +252,7 @@ export async function POST(request) {
   console.log("Calling Gemini | parts:", parts.length, "| hasImages:", validImages.length > 0);
   const geminiResult = await fetchGemini(apiUrl, requestBody, validImages.length > 0);
   if (!geminiResult.ok) {
+    console.error(`[${new Date().toISOString()}] Gemini error | mode:${mode} | ${geminiResult.error}`);
     return Response.json({ error: geminiResult.error }, { status: geminiResult.httpStatus });
   }
 
@@ -269,7 +272,7 @@ export async function POST(request) {
     return Response.json({ error: "Gemini response text is empty" }, { status: 500 });
   }
 
-  console.log("Gemini response length:", text.length);
+  console.log(`[${new Date().toISOString()}] Gemini ok | mode:${mode} | length:${text.length} | urlStatus:${urlStatus} | imageStatus:${imageStatus}`);
 
   return Response.json({ text, urlStatus, imageStatus });
 }

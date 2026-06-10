@@ -421,6 +421,7 @@ function App() {
   const [fontSize, setFontSize] = useState(() => localStorage.getItem(FONT_SIZE_KEY) || "medium");
   const [showShareConfirm, setShowShareConfirm] = useState(false);
   const [chipHint, setChipHint] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
   const resultCardRef = useRef(null);
@@ -562,7 +563,8 @@ function App() {
   async function handleSubmit(e) {
     e.preventDefault();
     const text = input.trim();
-    if (!text || !currentEntry) return;
+    if (!text || !currentEntry || isSubmitting) return;
+    setIsSubmitting(true);
     const wasContinuing = isContinuing;
     const isRecruit = currentEntry.id === "stylist";
     const result = isRecruit ? classifyRecruit(text) : classifyConsult(text);
@@ -635,7 +637,7 @@ function App() {
               isContinuing: wasContinuing,
               hasImages: encodedImages.length > 0,
             });
-        const aiText = await askGemini(prompt, savedUrls, encodedImages);
+        const aiText = await askGemini(prompt, savedUrls, encodedImages, isRecruit ? "recruit" : "customer");
         if (requestId === aiRequestIdRef.current) {
           const fallbackText = wasContinuing
             ? isRecruit
@@ -693,6 +695,7 @@ function App() {
         if (requestId === aiRequestIdRef.current) setAiLoading(false);
       }
     }
+    setIsSubmitting(false);
   }
 
   async function handleRetryAI() {
@@ -725,7 +728,7 @@ function App() {
             isContinuing: false,
             hasImages: retryImages.length > 0,
           });
-      const aiText = await askGemini(prompt, retryUrls, retryImages);
+      const aiText = await askGemini(prompt, retryUrls, retryImages, isRecruit ? "recruit" : "customer");
       if (requestId === aiRequestIdRef.current) {
         let cleaned = aiText.replace(/^\s*#{1,6}\s*/gm, "").trim();
         const hasMarkdown = /^\s*#{1,6}/m.test(cleaned);
@@ -944,11 +947,11 @@ function App() {
                 />
 
                 <p className="send-note">この相談内容や写真は、現在、店舗スタッフへ自動送信されません。</p>
-                <button type="submit" className="submit-button">
+                <button type="submit" className="submit-button" disabled={isSubmitting}>
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M22 2 11 13" /><path d="m22 2-7 20-4-9-9-4 20-7Z" />
                   </svg>
-                  <span>相談・記録する</span>
+                  <span>{isSubmitting ? "整理しています…" : "相談・記録する"}</span>
                 </button>
 
                 {/* 参考画像・URLセクション（リクルート入口では非表示） */}
@@ -1110,8 +1113,8 @@ function App() {
                         )}
                         {!aiLoading && !aiResponse && aiError && (
                           <div className="ai-error">
-                            <p>AI応答を取得できませんでした。</p>
-                            <p>時間をおいてもう一度試すか、相談内容を<ruby>Da-is<rt>デイズ</rt></ruby>に共有していただくと、お店側で確認しやすくなります。</p>
+                            <p>相談内容の整理中にうまく接続できませんでした。</p>
+                            <p>少し時間を置いてから、もう一度お試しください。相談内容を共有していただくと、<ruby>Da-is<rt>デイズ</rt></ruby>のお店側でも確認できます。</p>
                             <div className="ai-error-actions">
                               <button
                                 type="button"
@@ -1119,7 +1122,7 @@ function App() {
                                 onClick={handleRetryAI}
                                 disabled={aiLoading}
                               >
-                                もう一度AI応答を試す
+                                もう一度試す
                               </button>
                               <button
                                 type="button"
