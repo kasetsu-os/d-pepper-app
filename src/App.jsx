@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 import { buildDpepperPrompt } from "./lib/dpepperPrompt";
+import { buildRecruitPrompt, classifyRecruit } from "./lib/recruitEngine";
 import { askGemini } from "./lib/geminiClient";
 
 function withDaIs(text) {
@@ -572,7 +573,8 @@ function App() {
     const text = input.trim();
     if (!text || !currentEntry) return;
     const wasContinuing = isContinuing;
-    const result = classifyConsult(text);
+    const isRecruit = currentEntry.id === "stylist";
+    const result = isRecruit ? classifyRecruit(text) : classifyConsult(text);
     const fieldUrls = attachedUrls.filter((u) => u.trim() !== "");
     const textUrls = extractUrls(text);
     const savedUrls = [...new Set([...fieldUrls, ...textUrls])];
@@ -624,23 +626,35 @@ function App() {
       console.log("[DPEPPER FRONT] group:", result.group);
       console.log("[DPEPPER FRONT] text(50):", text.slice(0, 50));
       try {
-        const prompt = buildDpepperPrompt({
-          text,
-          category: result.category,
-          group: result.group,
-          summary: result.summary,
-          guidance: result.guidance,
-          entryTitle: currentEntry.title,
-          isContinuing: wasContinuing,
-          hasImages: encodedImages.length > 0,
-        });
+        const prompt = isRecruit
+          ? buildRecruitPrompt({
+              text,
+              category: result.category,
+              summary: result.summary,
+              guidance: result.guidance,
+              isContinuing: wasContinuing,
+            })
+          : buildDpepperPrompt({
+              text,
+              category: result.category,
+              group: result.group,
+              summary: result.summary,
+              guidance: result.guidance,
+              entryTitle: currentEntry.title,
+              isContinuing: wasContinuing,
+              hasImages: encodedImages.length > 0,
+            });
         const aiText = await askGemini(prompt, savedUrls, encodedImages);
         if (requestId === aiRequestIdRef.current) {
           const fallbackText = wasContinuing
-            ? "続きですね。書いていただいた内容をもとに、もう少し整理してみます。気になる点や状態の変化があれば、続けて書いてみてください。"
-            : currentEntry.id === "regular"
-              ? "こんにちは。ご相談の内容を拝見しました。気になっている状態や変化を、もう少し詳しく書いていただくと、整理しやすくなります。"
-              : "こんにちは、Da-isの髪と頭皮の相談所『Dペッパー』です。ご相談の内容を拝見しました。気になっている状態を、もう少し具体的に書いていただくと、整理しやすくなります。";
+            ? isRecruit
+              ? "続きですね。書いていただいた内容をもとに整理します。見学前に気になることがあれば、続けて書いてみてください。"
+              : "続きですね。書いていただいた内容をもとに、もう少し整理してみます。気になる点や状態の変化があれば、続けて書いてみてください。"
+            : isRecruit
+              ? "見学前に確認したいこととして整理します。書いていただいた内容をもとに、見学や面談で確認しておくと安心なポイントをお伝えします。"
+              : currentEntry.id === "regular"
+                ? "こんにちは。ご相談の内容を拝見しました。気になっている状態や変化を、もう少し詳しく書いていただくと、整理しやすくなります。"
+                : "こんにちは、Da-isの髪と頭皮の相談所『Dペッパー』です。ご相談の内容を拝見しました。気になっている状態を、もう少し具体的に書いていただくと、整理しやすくなります。";
           let cleaned = aiText
             .replace(/^\s*#{1,6}\s*/gm, "")
             .trim();
@@ -657,7 +671,9 @@ function App() {
       } catch (err) {
         if (requestId === aiRequestIdRef.current) {
           console.error("Gemini error:", err);
-          if (savedUrls.length > 0 || encodedImages.length > 0) {
+          if (isRecruit) {
+            setAiError(err.message ?? "応答を取得できませんでした。");
+          } else if (savedUrls.length > 0 || encodedImages.length > 0) {
             const hasUrl = savedUrls.length > 0;
             const hasImg = encodedImages.length > 0;
             const what = hasUrl && hasImg ? "URLや画像の内容まで" : hasImg ? "画像の内容は十分に" : "URLの内容まで";
@@ -698,24 +714,35 @@ function App() {
     setAiLoading(true);
     setLoadingWithImages(retryImages.length > 0);
     const requestId = ++aiRequestIdRef.current;
+    const isRecruit = currentEntry?.id === "stylist";
     try {
-      const prompt = buildDpepperPrompt({
-        text: lastResult.text,
-        category: lastResult.category,
-        group: lastResult.group,
-        summary: lastResult.summary,
-        guidance: lastResult.guidance,
-        entryTitle: currentEntry?.title ?? "",
-        isContinuing: false,
-        hasImages: retryImages.length > 0,
-      });
+      const prompt = isRecruit
+        ? buildRecruitPrompt({
+            text: lastResult.text,
+            category: lastResult.category,
+            summary: lastResult.summary,
+            guidance: lastResult.guidance,
+            isContinuing: false,
+          })
+        : buildDpepperPrompt({
+            text: lastResult.text,
+            category: lastResult.category,
+            group: lastResult.group,
+            summary: lastResult.summary,
+            guidance: lastResult.guidance,
+            entryTitle: currentEntry?.title ?? "",
+            isContinuing: false,
+            hasImages: retryImages.length > 0,
+          });
       const aiText = await askGemini(prompt, retryUrls, retryImages);
       if (requestId === aiRequestIdRef.current) {
         let cleaned = aiText.replace(/^\s*#{1,6}\s*/gm, "").trim();
         const hasMarkdown = /^\s*#{1,6}/m.test(cleaned);
         const isComplete = cleaned.endsWith("。") || cleaned.endsWith("！") || cleaned.endsWith("？");
         if (hasMarkdown || !isComplete) {
-          cleaned = "こんにちは、Da-isの髪と頭皮の相談所『Dペッパー』です。ご相談の内容を拝見しました。気になっている状態を、もう少し具体的に書いていただくと、整理しやすくなります。";
+          cleaned = isRecruit
+            ? "見学前に確認したいこととして整理します。書いていただいた内容をもとに、見学や面談で確認しておくと安心なポイントをお伝えします。"
+            : "こんにちは、Da-isの髪と頭皮の相談所『Dペッパー』です。ご相談の内容を拝見しました。気になっている状態を、もう少し具体的に書いていただくと、整理しやすくなります。";
         }
         setAiResponse(cleaned);
       }
@@ -903,7 +930,7 @@ function App() {
                     : chipHint
                       ? chipHint.helperText
                       : currentEntry.id === "stylist"
-                        ? "気になっていることをそのまま書いてください。採用・見学の詳細はご来店またはお電話でご案内します。"
+                        ? "Da-isに興味を持ってくださった美容師さん・見学希望の方向けの相談入口です。お店の雰囲気、働き方、技術や教育のこと、見学前に聞いておきたいことなどを自由に入力してください。"
                         : currentEntry.id === "regular"
                           ? "いつものこと、前回からの変化、気になっていること。何でも書いてください。"
                           : "気になっていることをそのまま書いてください。うまくまとまっていなくても大丈夫です。"}
@@ -1125,7 +1152,9 @@ function App() {
                         <p>{withDaIs(lastResult.nextAction)}</p>
                       </div>
                       {(() => {
-                        const btns = EXIT_BUTTONS[lastResult.category] ?? EXIT_BUTTONS["髪の悩み"];
+                        const btns = currentEntry?.id === "stylist"
+                          ? EXIT_BUTTONS["美容師・見学希望"]
+                          : (EXIT_BUTTONS[lastResult.category] ?? EXIT_BUTTONS["髪の悩み"]);
                         const moreBtns    = btns.filter(b => b.action === "more");
                         const historyBtns = btns.filter(b => b.action === "history");
                         const urlBtns     = btns.filter(b => b.url);
