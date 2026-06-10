@@ -213,15 +213,6 @@ function classifyConsult(text) {
       nextAction: "この内容は、来店時のメモや予約時の備考にも使えます。直接相談したい場合は、予約ページやお電話もご利用ください。",
     };
 
-  /* ─── リクルート ─── */
-  if (v.includes("美容師") || v.includes("見学") || v.includes("働") || v.includes("求人") || v.includes("採用"))
-    return {
-      category: "美容師・見学希望", group: "リクルート",
-      summary: "Da-isの見学や働き方に関するご相談として記録しました。",
-      guidance: "Da-isの雰囲気や働き方はInstagramやnoteでご覧いただけます。見学をご希望の方はお電話にてお問い合わせください。",
-      nextAction: "Da-isの雰囲気や働き方を知りたい方は、Instagramやnoteをご覧ください。\n見学をご希望の場合は、お電話にてお問い合わせください。",
-    };
-
   /* ─── 未分類フォールバック ─── */
   return {
     category: "髪の悩み", group: "未分類",
