@@ -104,8 +104,6 @@ export async function POST(request) {
   console.log("Has API key:", Boolean(process.env.GEMINI_API_KEY));
 
   const apiKey = process.env.GEMINI_API_KEY;
-  const apiKeyLast6 = apiKey ? apiKey.slice(-6) : "missing";
-  console.log(`[${new Date().toISOString()}] Gemini env check | keyLast6:${apiKeyLast6}`);
   if (!apiKey) {
     console.error("GEMINI_API_KEY is missing");
     return Response.json({ error: "GEMINI_API_KEY is not set" }, { status: 500 });
