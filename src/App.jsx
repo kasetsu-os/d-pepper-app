@@ -190,6 +190,15 @@ function classifyConsult(text) {
       nextAction: "この内容は、来店時のメモや予約時の備考にも使えます。直接相談したい場合は、予約ページやお電話もご利用ください。",
     };
 
+  /* ─── 食事・栄養 ─── */
+  if (v.includes("食べ物") || v.includes("食事") || v.includes("栄養") || v.includes("タンパク質") || v.includes("たんぱく質") || v.includes("亜鉛") || v.includes("鉄分") || v.includes("ビオチン") || v.includes("ビタミン") || v.includes("サプリ") || v.includes("ダイエット") || v.includes("食事制限") || v.includes("プロテイン") || v.includes("何を食べ") || v.includes("髪に良い") || v.includes("髪にいい") || v.includes("髪が生える") || v.includes("数珠毛") || v.includes("ちぢれ毛"))
+    return {
+      category: "食事・栄養相談", group: "食事・栄養",
+      summary: "食事・栄養と髪の状態に関する相談として記録しました。",
+      guidance: "髪を作る体の土台を崩していないかを整理する方向でご案内します。タンパク質・鉄・亜鉛・ビタミンなどは髪や頭皮の土台に関係しますが、特定の食べ物で髪が生えるとは断定しません。急な抜け毛や体調不良がある場合は、専門機関への相談も選択肢として案内します。",
+      nextAction: "この内容は、来店時のメモや予約時の備考にも使えます。気になる変化が続く場合は、専門機関へのご相談もご検討ください。",
+    };
+
   /* ─── その他 ─── */
   if (v.includes("疲れ") || v.includes("リラックス") || v.includes("癒") || v.includes("眠") || v.includes("気分") || v.includes("しんどい") || v.includes("ストレス"))
     return {
