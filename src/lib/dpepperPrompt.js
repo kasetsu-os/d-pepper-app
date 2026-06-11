@@ -10,6 +10,7 @@ import {
   hairAgeChangeRules,
   grayHairMechanismRules,
   grayHairCareRules,
+  postCutIssueRules,
   imageTranslationRules,
   bannedPhrases,
   preferredPhrases,
@@ -36,6 +37,8 @@ export function buildDpepperPrompt({ text, category, group, summary, guidance, e
   if (isGrayHairMechanismConsult) { categoryRulesParts.push(grayHairMechanismRules); appliedRuleNames.push("grayHairMechanismRules"); }
   const isGrayHairCareConsult = /白髪予防|白髪を防ぐ|白髪を減らしたい|白髪をなくしたい|白髪にいい食べ物|白髪に効く|白髪サプリ|白髪美容液|頭皮美容液|頭皮の栄養|血流|血行|頭皮マッサージ|予洗い|シャンプーの仕方|下から上|頭皮を動かす|帽状腱膜|頭頂部|白髪ケア/.test(text);
   if (isGrayHairCareConsult) { categoryRulesParts.push(grayHairCareRules); appliedRuleNames.push("grayHairCareRules"); }
+  const isPostCutIssue = /切ってから|切ったら|カットしてから|カットしたら|短くしたら|短くなってから|短くしてから|前より扱いにくい|扱いにくくな|前より広がる|前より跳ねる|前より癖が出|前より膨らむ|切ってから癖|切ってから跳ね|切ってから広がり|切ってから膨らみ/.test(text);
+  if (isPostCutIssue) { categoryRulesParts.push(postCutIssueRules); appliedRuleNames.push("postCutIssueRules"); }
   if (hasImages) { categoryRulesParts.push(imageTranslationRules); appliedRuleNames.push("imageTranslationRules"); }
   console.log("[DPEPPER PROMPT] hasImages:", hasImages, "| imageTranslationRules applied:", hasImages);
   console.log("[DPEPPER PROMPT] applied rules:", appliedRuleNames.join(", "));
