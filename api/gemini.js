@@ -3,8 +3,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function fetchGemini(apiUrl, requestBody, hasImages) {
   const timeoutMs = hasImages ? 35000 : 25000;
-  const retryDelays = [1500];
-  const maxAttempts = 2;
+  const retryDelays = [500, 1000];
+  const maxAttempts = 3;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const controller = new AbortController();
@@ -19,12 +19,15 @@ async function fetchGemini(apiUrl, requestBody, hasImages) {
       });
       clearTimeout(timer);
 
-      if (res.ok) return { ok: true, res };
+      if (res.ok) {
+        if (attempt > 1) console.log(`Gemini retry ok | attempt:${attempt}/${maxAttempts}`);
+        return { ok: true, res };
+      }
 
       const errBody = await res.json().catch(() => ({}));
       const message = errBody?.error?.message ?? "(no message)";
       const status = errBody?.error?.status ?? res.status;
-      console.error(`Gemini API error | attempt ${attempt}/${maxAttempts} | HTTP ${res.status} | ${status} – ${message}`);
+      console.error(`Gemini retry | attempt:${attempt}/${maxAttempts} | HTTP ${res.status} | ${status} – ${message}`);
 
       if (NO_RETRY_STATUSES.has(res.status)) {
         return { ok: false, error: `Gemini API error: ${res.status} ${status} – ${message}`, httpStatus: res.status };
@@ -37,7 +40,7 @@ async function fetchGemini(apiUrl, requestBody, hasImages) {
     } catch (err) {
       clearTimeout(timer);
       const isTimeout = err.name === "AbortError";
-      console.error(`Gemini fetch failed | attempt ${attempt}/${maxAttempts} | hasImages:${hasImages} | ${isTimeout ? "timeout" : err.message}`);
+      console.error(`Gemini retry | attempt:${attempt}/${maxAttempts} | hasImages:${hasImages} | ${isTimeout ? "timeout" : err.message}`);
 
       if (attempt < maxAttempts) {
         await sleep(retryDelays[attempt - 1]);
