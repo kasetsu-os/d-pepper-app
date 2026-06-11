@@ -19,7 +19,7 @@ export function buildDpepperPrompt({ text, category, group, summary, guidance, e
   const categoryRulesParts = [];
   const appliedRuleNames = ["commonRules", "bannedPhrases", "preferredPhrases"];
   console.log("[DPEPPER PROMPT] hasImages:", hasImages, "| group:", group, "| category:", category);
-  const isColorConsult = category === "カラー相談" || /色持ち|退色|色落ち|カラー持ち|トリートメント持ち|色が抜け|色が変わ|すぐ落ち|すぐ明るく|すぐ黄色|すぐ赤く|黄色っぽ|赤みが出|染めた時と違|持ちが悪|トリートメントが取れ|手触りが戻|パサつきが戻|ツヤがなくな/.test(text);
+  const isColorConsult = category === "カラー相談" || /色持ち|退色|色落ち|カラー持ち|トリートメント持ち|色が抜け|色が変わ|すぐ落ち|すぐ明るく|すぐ黄色|すぐ赤く|黄色っぽ|赤みが出|染めた時と違|持ちが悪|トリートメントが取れ|手触りが戻|パサつきが戻|ツヤがなくな|黄ばみ|黄みが出|カラーシャンプー|クオルシア|フィヨーレ|ブリーチ|ブリーチカラー|ブリーチオンカラー|マニキュア|ヘアマニキュア|リタッチ|根元だけ|根元のみ|伸びたところ|伸びた部分|何ヶ月持|何か月持|何週間持|どのくらい持|どれくらい持|持ちは|持つか/.test(text);
   const isBedheadConsult = /寝癖|寝ぐせ|跳ねる|はねる|朝はね|毛先がはね|根元がつぶれ|ボリュームがつぶれ|朝まとまらない|寝ると変|うねる|朝のセット|髪が広がる|湿気でまとまらない|寝汗/.test(text);
   const isHumidityDrynessConsult = /湿気|湿度|梅雨|汗|頭皮が蒸れ|蒸れ|アイロンが取れ|セットが取れ|セットが持たない|前髪が崩れ|前髪が割れ|前髪がうねる|表面がもわ|表面がパヤ|広がる|うねる|トップがつぶれ|ボリュームがつぶれ|乾燥|パサつく|静電気|帯電|絡まる|毛先が乾く|ツヤがない|冬に広がる|雨の日|湿気でうねる|湿気で広がる|汗で前髪|アイロンしても戻る|巻きが取れ|カールが取れ|チリチリ|アホ毛|もわもわ|冬にパサつく|服で静電気|マフラーで絡まる|乾燥で広がる/.test(text);
   if (group.includes("頭皮"))   { categoryRulesParts.push(scalpRules);  appliedRuleNames.push("scalpRules"); }
