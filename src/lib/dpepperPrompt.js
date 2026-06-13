@@ -43,7 +43,7 @@ export function buildDpepperPrompt({ text, category, group, summary, guidance, e
   if (isPostCutIssue) { categoryRulesParts.push(postCutIssueRules); appliedRuleNames.push("postCutIssueRules"); }
   const isHomeCareConditioner = /トリートメントが面倒|コンディショナーが面倒|トリートメントしない|コンディショナーしない|トリートメントしなくて|コンディショナーしなくて|シャンプーだけ|オイルだけ|乾かす前にオイル|洗い流さないトリートメント|洗い流さないオイル|流すのが面倒|時間を置くのが面倒|時間を置かなくて|顔がぬるぬる|ぬるぬるするのが嫌|洗顔し直す|市販のトリートメント|市販のコンディショナー|美容室のトリートメント|サロン専売|コンディショナーいらない|トリートメントいらない|コンディショナーは必要|トリートメントは必要/.test(text);
   if (isHomeCareConditioner) { categoryRulesParts.push(homeCareConditionerRules); appliedRuleNames.push("homeCareConditionerRules"); }
-  const isSalonTreatment = /酸性トリートメント|アメージングトリートメント|アイロン使用|アイロンを使うトリートメント|熱を使うトリートメント|酸熱トリートメント|酸熱|酸性ストレート|酸性縮毛矯正/.test(text);
+  const isSalonTreatment = /酸性トリートメント|アメージングトリートメント|アイロン使用|アイロンを使うトリートメント|熱を使うトリートメント|酸熱トリートメント|酸熱|酸性ストレート|酸性縮毛矯正|酸熱ストレート|サロントリートメント|髪質改善|艶重視|ケア重視|長持ち重視|トリートメントの持ち|トリートメントはどのくらい持/.test(text);
   if (isSalonTreatment) { categoryRulesParts.push(salonTreatmentRules); appliedRuleNames.push("salonTreatmentRules"); }
   if (hasImages) { categoryRulesParts.push(imageTranslationRules); appliedRuleNames.push("imageTranslationRules"); }
   console.log("[DPEPPER PROMPT] hasImages:", hasImages, "| imageTranslationRules applied:", hasImages);
