@@ -11,6 +11,7 @@ import {
   grayHairMechanismRules,
   grayHairCareRules,
   postCutIssueRules,
+  homeCareConditionerRules,
   imageTranslationRules,
   bannedPhrases,
   preferredPhrases,
@@ -39,6 +40,8 @@ export function buildDpepperPrompt({ text, category, group, summary, guidance, e
   if (isGrayHairCareConsult) { categoryRulesParts.push(grayHairCareRules); appliedRuleNames.push("grayHairCareRules"); }
   const isPostCutIssue = /切ってから|切ったら|カットしてから|カットしたら|短くしたら|短くなってから|短くしてから|前より扱いにくい|扱いにくくな|前より広がる|前より跳ねる|前より癖が出|前より膨らむ|切ってから癖|切ってから跳ね|切ってから広がり|切ってから膨らみ/.test(text);
   if (isPostCutIssue) { categoryRulesParts.push(postCutIssueRules); appliedRuleNames.push("postCutIssueRules"); }
+  const isHomeCareConditioner = /トリートメントが面倒|コンディショナーが面倒|トリートメントしない|コンディショナーしない|トリートメントしなくて|コンディショナーしなくて|シャンプーだけ|オイルだけ|乾かす前にオイル|洗い流さないトリートメント|洗い流さないオイル|流すのが面倒|時間を置くのが面倒|時間を置かなくて|顔がぬるぬる|ぬるぬるするのが嫌|洗顔し直す|市販のトリートメント|市販のコンディショナー|美容室のトリートメント|サロン専売|コンディショナーいらない|トリートメントいらない|コンディショナーは必要|トリートメントは必要/.test(text);
+  if (isHomeCareConditioner) { categoryRulesParts.push(homeCareConditionerRules); appliedRuleNames.push("homeCareConditionerRules"); }
   if (hasImages) { categoryRulesParts.push(imageTranslationRules); appliedRuleNames.push("imageTranslationRules"); }
   console.log("[DPEPPER PROMPT] hasImages:", hasImages, "| imageTranslationRules applied:", hasImages);
   console.log("[DPEPPER PROMPT] applied rules:", appliedRuleNames.join(", "));
