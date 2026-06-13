@@ -50,7 +50,7 @@ const SHOP_EMAIL = 'ここにお店用メールアドレスを入れる';
 ↓ 例：
 
 ```javascript
-const SHOP_EMAIL = 'dais.hair@gmail.com';
+const SHOP_EMAIL = 'dais20101119@gmail.com';
 ```
 
 > **注意：** `SHOP_EMAIL` を設定しないとメールは送信されません。  
