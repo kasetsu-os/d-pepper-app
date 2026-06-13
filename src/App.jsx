@@ -302,44 +302,6 @@ function buildShareUrl(result, aiResponse) {
   }
 }
 
-function buildHistoryShareUrl(item) {
-  try {
-    const dateStr = new Intl.DateTimeFormat("ja-JP", {
-      year: "numeric", month: "2-digit", day: "2-digit",
-      hour: "2-digit", minute: "2-digit",
-    }).format(new Date(item.createdAt));
-    const catDisplay = item.category === "__complaint__" ? "内容を確認しました" : (item.category ?? "");
-    const isFav = item.favorite ?? false;
-    const lines = [
-      "【Dペッパー履歴共有】",
-      `相談日時：${dateStr}`,
-      `カテゴリ：${catDisplay}`,
-      `分類：${item.group ?? ""}`,
-      item.entryTitle ? `来店種別：${item.entryTitle}` : null,
-      isFav ? "お気に入り：⭐️" : null,
-      `履歴ID：${item.id}`,
-      "",
-      "＝＝ご相談内容＝＝",
-      item.text ?? "",
-      item.nextAction ? `\n＝＝次の案内＝＝\n${item.nextAction}` : null,
-    ].filter(x => x !== null).join("\n").slice(0, 3500);
-
-    const aiText = item.aiResponse
-      ? item.aiResponse
-      : "この相談は詳細保存前の履歴のため、Dペッパーの返答本文は残っていません。";
-
-    const q = [
-      "usp=pp_url",
-      `entry.1825538084=${encodeURIComponent(lines)}`,
-      `entry.948403332=${encodeURIComponent(aiText.slice(0, 3500))}`,
-    ].filter(Boolean).join("&");
-
-    return `${SHARE_FORM_BASE}?${q}`;
-  } catch {
-    return SHARE_FORM_URL;
-  }
-}
-
 function resizeAndEncodeImage(imgObj) {
   return new Promise((resolve) => {
     const { file } = imgObj;
@@ -863,11 +825,20 @@ function App() {
     setHistoryShareStatus("sending");
     setHistoryShareConfirm(false);
     try {
-      const url = buildHistoryShareUrl(item);
-      await new Promise(r => setTimeout(r, 300));
-      window.open(url, "_blank", "noopener,noreferrer");
-      setHistoryShareStatus("sent");
-    } catch {
+      const res = await fetch("/api/share-history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ item }),
+      });
+      if (res.ok) {
+        setHistoryShareStatus("sent");
+      } else {
+        const err = await res.json().catch(() => ({}));
+        console.error("[History share] server error:", err);
+        setHistoryShareStatus("error");
+      }
+    } catch (err) {
+      console.error("[History share] fetch error:", err);
       setHistoryShareStatus("error");
     }
   }
