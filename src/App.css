@@ -1115,17 +1115,15 @@ body {
 }
 .history-panel.is-open { transform: translateX(0); }
 
-.history-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 26px; padding-bottom: 16px; border-bottom: 1px solid rgba(184,149,90,0.14); }
+.history-panel-header { margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid rgba(184,149,90,0.14); }
+.history-panel-header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .history-panel-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 19px; font-weight: 400; color: var(--text-dark); letter-spacing: 0.10em; }
-.history-panel-header button { width: 34px; height: 34px; border: 1px solid rgba(184,149,90,0.28); border-radius: 50%; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-mid); transition: all 0.22s; }
-.history-panel-header button:hover { background: var(--gold); border-color: var(--gold); color: #fff; }
-.history-panel-header button svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; }
+.history-panel-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; box-sizing: border-box; max-width: 100%; }
 
 .history-empty { text-align: center; padding: 48px 0; color: var(--text-light); font-size: 13px; font-weight: 300; letter-spacing: 0.10em; line-height: 2.2; }
 .history-empty span { display: block; font-size: 12px; opacity: 0.7; }
 
-.history-panel-actions { display: flex; align-items: center; gap: 8px; }
-.history-action-btn { padding: 5px 12px; font-size: 12px; font-weight: 400; letter-spacing: 0.06em; background: none; border: 1px solid rgba(184,149,90,0.36); border-radius: 20px; color: var(--text-mid); cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.history-action-btn { padding: 5px 11px; font-size: 12px; font-weight: 400; letter-spacing: 0.04em; background: none; border: 1px solid rgba(184,149,90,0.36); border-radius: 20px; color: var(--text-mid); cursor: pointer; transition: all 0.2s; white-space: nowrap; }
 .history-action-btn:hover { border-color: var(--gold); color: var(--gold); }
 .history-action-btn--danger { border-color: rgba(160,40,40,0.30); color: rgba(160,40,40,0.80); }
 .history-action-btn--danger:hover { background: rgba(160,40,40,0.06); border-color: rgba(160,40,40,0.60); color: rgba(160,40,40,1); }
@@ -1133,12 +1131,23 @@ body {
 .history-close-btn:hover { background: var(--gold); border-color: var(--gold); color: #fff; }
 .history-close-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; }
 
+/* ─── 星ボタン ─── */
+.history-star-btn { position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; background: none; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; transition: transform 0.18s; z-index: 1; }
+.history-star-btn:hover { transform: scale(1.20); }
+.history-star-btn svg { width: 18px; height: 18px; fill: none; stroke: rgba(184,149,90,0.45); stroke-width: 1.6; stroke-linejoin: round; transition: all 0.18s; }
+.history-star-btn--on svg { fill: var(--gold); stroke: var(--gold); }
+.history-star-btn--modal { position: static; width: 34px; height: 34px; border: 1px solid rgba(184,149,90,0.28); border-radius: 50%; }
+.history-star-btn--modal svg { width: 16px; height: 16px; }
+.history-star-btn--modal.history-star-btn--on { background: rgba(184,149,90,0.10); border-color: var(--gold); }
+.history-detail-header-actions { display: flex; align-items: center; gap: 8px; }
+
 .history-list { display: flex; flex-direction: column; gap: 12px; }
-.history-item { padding: 16px; background: rgba(255,255,255,0.68); border: 1px solid rgba(184,149,90,0.12); border-radius: 12px; transition: all 0.2s; position: relative; }
+.history-item { padding: 16px; padding-right: 44px; background: rgba(255,255,255,0.68); border: 1px solid rgba(184,149,90,0.12); border-radius: 12px; transition: all 0.2s; position: relative; }
 .history-item--clickable { cursor: pointer; }
 .history-item--clickable:hover { border-color: rgba(184,149,90,0.28); background: rgba(255,255,255,0.90); }
-.history-item--selectable { cursor: pointer; padding-left: 46px; }
+.history-item--selectable { cursor: pointer; padding-left: 46px; padding-right: 16px; }
 .history-item--selected { border-color: var(--gold); background: rgba(184,149,90,0.06); }
+.history-item--favorite { border-color: rgba(184,149,90,0.30); }
 .history-checkbox { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; border: 1.5px solid rgba(184,149,90,0.40); border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.18s; }
 .history-checkbox--checked { background: var(--gold); border-color: var(--gold); }
 .history-checkbox svg { width: 13px; height: 13px; stroke: #fff; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
@@ -1177,6 +1186,9 @@ body {
 .history-confirm-btn:hover { border-color: var(--gold); color: var(--gold); }
 .history-confirm-btn--danger { background: rgba(160,40,40,0.08); border-color: rgba(160,40,40,0.35); color: rgba(160,40,40,0.85); }
 .history-confirm-btn--danger:hover { background: rgba(160,40,40,0.14); border-color: rgba(160,40,40,0.70); color: rgba(160,40,40,1); }
+.history-confirm-extra { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(184,149,90,0.14); text-align: center; }
+.history-confirm-extra-btn { background: none; border: none; font-size: 12px; color: rgba(160,40,40,0.60); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; padding: 4px; }
+.history-confirm-extra-btn:hover { color: rgba(160,40,40,0.90); }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -1296,8 +1308,10 @@ body {
   /* ── 履歴パネル ── */
   .history-panel { padding: 18px 14px; }
   .history-panel-header h2 { font-size: 17px; }
-  .history-panel-header button { width: 40px; height: 40px; }
-  .history-item { padding: 13px 11px; }
+  .history-close-btn { width: 40px; height: 40px; }
+  .history-item { padding: 13px 40px 13px 11px; }
+  .history-item--selectable { padding: 13px 11px 13px 46px; }
   .history-item h3 { font-size: 13px; }
   .history-item p  { font-size: 12px; }
+  .history-action-btn { font-size: 11px; padding: 4px 10px; }
 }

@@ -454,10 +454,10 @@ function App() {
   const [showShareConfirm, setShowShareConfirm] = useState(false);
   const [chipHint, setChipHint] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [historyDetail, setHistoryDetail] = useState(null);
+  const [historyDetailId, setHistoryDetailId] = useState(null);
   const [historySelectMode, setHistorySelectMode] = useState(false);
   const [selectedHistoryIds, setSelectedHistoryIds] = useState(new Set());
-  const [historyConfirmType, setHistoryConfirmType] = useState(null); // null | "selected" | "all"
+  const [historyConfirmType, setHistoryConfirmType] = useState(null); // null | "selected" | "unfavorited" | "all-with-favorites"
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
   const resultCardRef = useRef(null);
@@ -789,6 +789,13 @@ function App() {
     } finally {
       if (requestId === aiRequestIdRef.current) setAiLoading(false);
     }
+  }
+
+  const historyDetailItem = consultations.find(c => c.id === historyDetailId) ?? null;
+
+  function toggleFavorite(id, e) {
+    e?.stopPropagation();
+    setConsultations(prev => prev.map(c => c.id === id ? { ...c, favorite: !(c.favorite ?? false) } : c));
   }
 
   function formatDate(iso) {
@@ -1322,39 +1329,39 @@ function App() {
       />
       <aside className={`history-panel${historyOpen ? " is-open" : ""}`}>
         <div className="history-panel-header">
-          <h2>履歴</h2>
-          <div className="history-panel-actions">
-            {historySelectMode ? (
-              <>
-                {selectedHistoryIds.size > 0 && (
-                  <button type="button" className="history-action-btn history-action-btn--danger" onClick={() => setHistoryConfirmType("selected")}>
-                    {selectedHistoryIds.size}件を削除
-                  </button>
-                )}
-                <button type="button" className="history-action-btn" onClick={() => { setHistorySelectMode(false); setSelectedHistoryIds(new Set()); }}>
-                  キャンセル
-                </button>
-              </>
-            ) : (
-              <>
-                {consultations.length > 0 && (
-                  <>
-                    <button type="button" className="history-action-btn" onClick={() => { setHistorySelectMode(true); setSelectedHistoryIds(new Set()); }}>
-                      選択
-                    </button>
-                    <button type="button" className="history-action-btn history-action-btn--danger" onClick={() => setHistoryConfirmType("all")}>
-                      すべて削除
-                    </button>
-                  </>
-                )}
-                <button type="button" className="history-close-btn" onClick={() => setHistoryOpen(false)}>
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M6 6l12 12" /><path d="M18 6 6 18" />
-                  </svg>
-                </button>
-              </>
-            )}
+          <div className="history-panel-header-top">
+            <h2>履歴</h2>
+            <button type="button" className="history-close-btn" onClick={() => { setHistoryOpen(false); setHistorySelectMode(false); setSelectedHistoryIds(new Set()); }}>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 6l12 12" /><path d="M18 6 6 18" />
+              </svg>
+            </button>
           </div>
+          {consultations.length > 0 && (
+            <div className="history-panel-toolbar">
+              {historySelectMode ? (
+                <>
+                  <button type="button" className="history-action-btn" onClick={() => { setHistorySelectMode(false); setSelectedHistoryIds(new Set()); }}>
+                    キャンセル
+                  </button>
+                  {selectedHistoryIds.size > 0 && (
+                    <button type="button" className="history-action-btn history-action-btn--danger" onClick={() => setHistoryConfirmType("selected")}>
+                      {selectedHistoryIds.size}件を削除
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <button type="button" className="history-action-btn" onClick={() => { setHistorySelectMode(true); setSelectedHistoryIds(new Set()); }}>
+                    選択
+                  </button>
+                  <button type="button" className="history-action-btn history-action-btn--danger" onClick={() => setHistoryConfirmType("unfavorited")}>
+                    ⭐️以外を削除
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </div>
         {consultations.length === 0 ? (
           <div className="history-empty">
@@ -1365,9 +1372,10 @@ function App() {
           <div className="history-list">
             {consultations.map((item) => {
               const isSelected = selectedHistoryIds.has(item.id);
+              const isFav = item.favorite ?? false;
               return (
                 <article
-                  className={`history-item${historySelectMode ? " history-item--selectable" : " history-item--clickable"}${isSelected ? " history-item--selected" : ""}`}
+                  className={`history-item${historySelectMode ? " history-item--selectable" : " history-item--clickable"}${isSelected ? " history-item--selected" : ""}${isFav ? " history-item--favorite" : ""}`}
                   key={item.id}
                   onClick={() => {
                     if (historySelectMode) {
@@ -1378,16 +1386,27 @@ function App() {
                         return next;
                       });
                     } else {
-                      setHistoryDetail(item);
+                      setHistoryDetailId(item.id);
                     }
                   }}
                 >
-                  {historySelectMode && (
+                  {historySelectMode ? (
                     <div className={`history-checkbox${isSelected ? " history-checkbox--checked" : ""}`} aria-hidden="true">
-                      {isSelected && (
-                        <svg viewBox="0 0 24 24"><path d="M5 12l5 5L19 7" /></svg>
-                      )}
+                      {isSelected && <svg viewBox="0 0 24 24"><path d="M5 12l5 5L19 7" /></svg>}
                     </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className={`history-star-btn${isFav ? " history-star-btn--on" : ""}`}
+                      aria-label={isFav ? "お気に入り解除" : "お気に入りに追加"}
+                      onClick={e => toggleFavorite(item.id, e)}
+                    >
+                      {isFav ? (
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                      )}
+                    </button>
                   )}
                   <div className="history-meta">
                     <span>{item.entryTitle}</span>
@@ -1409,52 +1428,62 @@ function App() {
       </aside>
 
       {/* 履歴詳細モーダル */}
-      {historyDetail && (
-        <div className="history-detail-overlay" onClick={() => setHistoryDetail(null)}>
+      {historyDetailItem && (
+        <div className="history-detail-overlay" onClick={() => setHistoryDetailId(null)}>
           <div className="history-detail-modal" onClick={e => e.stopPropagation()}>
             <div className="history-detail-header">
               <h3>相談の詳細</h3>
-              <button type="button" onClick={() => setHistoryDetail(null)} aria-label="閉じる">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M6 6l12 12" /><path d="M18 6 6 18" />
-                </svg>
-              </button>
+              <div className="history-detail-header-actions">
+                <button
+                  type="button"
+                  className={`history-star-btn history-star-btn--modal${(historyDetailItem.favorite ?? false) ? " history-star-btn--on" : ""}`}
+                  aria-label={(historyDetailItem.favorite ?? false) ? "お気に入り解除" : "お気に入りに追加"}
+                  onClick={e => toggleFavorite(historyDetailItem.id, e)}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                </button>
+                <button type="button" onClick={() => setHistoryDetailId(null)} aria-label="閉じる">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 6l12 12" /><path d="M18 6 6 18" />
+                  </svg>
+                </button>
+              </div>
             </div>
             <div className="history-detail-body">
               <div className="history-detail-row">
                 <span className="history-detail-label">日時</span>
-                <span className="history-detail-value">{formatDate(historyDetail.createdAt)}</span>
+                <span className="history-detail-value">{formatDate(historyDetailItem.createdAt)}</span>
               </div>
               <div className="history-detail-row">
                 <span className="history-detail-label">来店種別</span>
-                <span className="history-detail-value">{historyDetail.entryTitle}</span>
+                <span className="history-detail-value">{historyDetailItem.entryTitle}</span>
               </div>
               <div className="history-detail-row">
                 <span className="history-detail-label">カテゴリ</span>
-                <span className="history-detail-value">{historyDetail.category === "__complaint__" ? "内容を確認しました" : historyDetail.category}</span>
+                <span className="history-detail-value">{historyDetailItem.category === "__complaint__" ? "内容を確認しました" : historyDetailItem.category}</span>
               </div>
               <div className="history-detail-row">
                 <span className="history-detail-label">分類</span>
-                <span className="history-detail-value">{historyDetail.group}</span>
+                <span className="history-detail-value">{historyDetailItem.group}</span>
               </div>
               <div className="history-detail-section">
                 <span className="history-detail-label">ご相談</span>
-                <p className="history-detail-text">{historyDetail.text}</p>
+                <p className="history-detail-text">{historyDetailItem.text}</p>
               </div>
-              {historyDetail.aiResponse ? (
+              {historyDetailItem.aiResponse ? (
                 <div className="history-detail-section">
                   <span className="history-detail-label">Dペッパーの返答</span>
-                  <p className="history-detail-text">{historyDetail.aiResponse}</p>
+                  <p className="history-detail-text">{historyDetailItem.aiResponse}</p>
                 </div>
               ) : (
                 <div className="history-detail-section">
                   <span className="history-detail-label history-detail-label--dim">Dペッパーの返答（この相談は保存対象外です）</span>
                 </div>
               )}
-              {historyDetail.nextAction && historyDetail.category !== "__complaint__" && (
+              {historyDetailItem.nextAction && historyDetailItem.category !== "__complaint__" && (
                 <div className="history-detail-section">
                   <span className="history-detail-label">次の案内</span>
-                  <p className="history-detail-text history-detail-text--small">{historyDetail.nextAction}</p>
+                  <p className="history-detail-text history-detail-text--small">{historyDetailItem.nextAction}</p>
                 </div>
               )}
             </div>
@@ -1467,9 +1496,17 @@ function App() {
         <div className="history-confirm-overlay" onClick={() => setHistoryConfirmType(null)}>
           <div className="history-confirm-dialog" onClick={e => e.stopPropagation()}>
             <p>
-              {historyConfirmType === "all"
-                ? "すべての相談履歴を削除しますか？この操作は元に戻せません。"
-                : `選択した${selectedHistoryIds.size}件の相談履歴を削除しますか？この操作は元に戻せません。`}
+              {historyConfirmType === "unfavorited"
+                ? "⭐️を付けていない相談履歴をすべて削除します。⭐️付きの履歴は残ります。この操作は元に戻せません。"
+                : historyConfirmType === "all-with-favorites"
+                  ? "⭐️付きの履歴も含めて、すべての相談履歴を削除しますか？この操作は元に戻せません。"
+                  : (() => {
+                      const hasFav = [...selectedHistoryIds].some(id => consultations.find(c => c.id === id)?.favorite);
+                      return hasFav
+                        ? `⭐️付きの履歴が含まれています。選択した${selectedHistoryIds.size}件の相談履歴を削除しますか？この操作は元に戻せません。`
+                        : `選択した${selectedHistoryIds.size}件の相談履歴を削除しますか？この操作は元に戻せません。`;
+                    })()
+              }
             </p>
             <div className="history-confirm-buttons">
               <button type="button" className="history-confirm-btn" onClick={() => setHistoryConfirmType(null)}>
@@ -1479,7 +1516,9 @@ function App() {
                 type="button"
                 className="history-confirm-btn history-confirm-btn--danger"
                 onClick={() => {
-                  if (historyConfirmType === "all") {
+                  if (historyConfirmType === "unfavorited") {
+                    setConsultations(prev => prev.filter(c => c.favorite ?? false));
+                  } else if (historyConfirmType === "all-with-favorites") {
                     setConsultations([]);
                   } else {
                     setConsultations(prev => prev.filter(c => !selectedHistoryIds.has(c.id)));
@@ -1492,6 +1531,17 @@ function App() {
                 削除する
               </button>
             </div>
+            {historyConfirmType === "unfavorited" && (
+              <div className="history-confirm-extra">
+                <button
+                  type="button"
+                  className="history-confirm-extra-btn"
+                  onClick={() => setHistoryConfirmType("all-with-favorites")}
+                >
+                  ⭐️付きも含めてすべて削除する
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
