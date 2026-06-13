@@ -302,6 +302,44 @@ function buildShareUrl(result, aiResponse) {
   }
 }
 
+function buildHistoryShareUrl(item) {
+  try {
+    const dateStr = new Intl.DateTimeFormat("ja-JP", {
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit",
+    }).format(new Date(item.createdAt));
+    const catDisplay = item.category === "__complaint__" ? "内容を確認しました" : (item.category ?? "");
+    const isFav = item.favorite ?? false;
+    const lines = [
+      "【Dペッパー履歴共有】",
+      `相談日時：${dateStr}`,
+      `カテゴリ：${catDisplay}`,
+      `分類：${item.group ?? ""}`,
+      item.entryTitle ? `来店種別：${item.entryTitle}` : null,
+      isFav ? "お気に入り：⭐️" : null,
+      `履歴ID：${item.id}`,
+      "",
+      "＝＝ご相談内容＝＝",
+      item.text ?? "",
+      item.nextAction ? `\n＝＝次の案内＝＝\n${item.nextAction}` : null,
+    ].filter(x => x !== null).join("\n").slice(0, 3500);
+
+    const aiText = item.aiResponse
+      ? item.aiResponse
+      : "この相談は詳細保存前の履歴のため、Dペッパーの返答本文は残っていません。";
+
+    const q = [
+      "usp=pp_url",
+      `entry.1825538084=${encodeURIComponent(lines)}`,
+      `entry.948403332=${encodeURIComponent(aiText.slice(0, 3500))}`,
+    ].filter(Boolean).join("&");
+
+    return `${SHARE_FORM_BASE}?${q}`;
+  } catch {
+    return SHARE_FORM_URL;
+  }
+}
+
 function resizeAndEncodeImage(imgObj) {
   return new Promise((resolve) => {
     const { file } = imgObj;
@@ -465,6 +503,8 @@ function App() {
   const [historySelectMode, setHistorySelectMode] = useState(false);
   const [selectedHistoryIds, setSelectedHistoryIds] = useState(new Set());
   const [historyConfirmType, setHistoryConfirmType] = useState(null); // null | "selected" | "unfavorited" | "all-with-favorites"
+  const [historyShareConfirm, setHistoryShareConfirm] = useState(false);
+  const [historyShareStatus, setHistoryShareStatus] = useState(null); // null | "sending" | "sent" | "error"
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
   const resultCardRef = useRef(null);
@@ -811,6 +851,25 @@ function App() {
         month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
       }).format(new Date(iso));
     } catch { return ""; }
+  }
+
+  function closeHistoryDetail() {
+    setHistoryDetailId(null);
+    setHistoryShareConfirm(false);
+    setHistoryShareStatus(null);
+  }
+
+  async function handleHistoryShare(item) {
+    setHistoryShareStatus("sending");
+    setHistoryShareConfirm(false);
+    try {
+      const url = buildHistoryShareUrl(item);
+      await new Promise(r => setTimeout(r, 300));
+      window.open(url, "_blank", "noopener,noreferrer");
+      setHistoryShareStatus("sent");
+    } catch {
+      setHistoryShareStatus("error");
+    }
   }
 
   return (
@@ -1436,7 +1495,7 @@ function App() {
 
       {/* 履歴詳細モーダル */}
       {historyDetailItem && (
-        <div className="history-detail-overlay" onClick={() => setHistoryDetailId(null)}>
+        <div className="history-detail-overlay" onClick={closeHistoryDetail}>
           <div className="history-detail-modal" onClick={e => e.stopPropagation()}>
             <div className="history-detail-header">
               <h3>相談の詳細</h3>
@@ -1449,7 +1508,7 @@ function App() {
                 >
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
                 </button>
-                <button type="button" onClick={() => setHistoryDetailId(null)} aria-label="閉じる">
+                <button type="button" onClick={closeHistoryDetail} aria-label="閉じる">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M6 6l12 12" /><path d="M18 6 6 18" />
                   </svg>
@@ -1488,6 +1547,65 @@ function App() {
                   <span className="history-detail-label">次の案内</span>
                   <p className="history-detail-text history-detail-text--small">{historyDetailItem.nextAction}</p>
                 </div>
+              )}
+            </div>
+
+            {/* 履歴共有フッター */}
+            <div className="history-detail-footer">
+              {historyShareStatus === "sent" ? (
+                <div className="history-detail-share-status history-detail-share-status--sent">
+                  <p>相談内容をDa-isに共有しました。</p>
+                  <button
+                    type="button"
+                    className="history-detail-share-again"
+                    onClick={() => { setHistoryShareStatus(null); setHistoryShareConfirm(false); }}
+                  >
+                    もう一度送る
+                  </button>
+                </div>
+              ) : historyShareStatus === "error" ? (
+                <div className="history-detail-share-status history-detail-share-status--error">
+                  <p>共有に失敗しました。少し時間を置いてからもう一度お試しください。</p>
+                  <button
+                    type="button"
+                    className="history-detail-share-again"
+                    onClick={() => { setHistoryShareStatus(null); setHistoryShareConfirm(false); }}
+                  >
+                    もう一度試す
+                  </button>
+                </div>
+              ) : historyShareConfirm ? (
+                <div className="history-detail-share-confirm">
+                  <p className="history-detail-share-confirm-text">
+                    この相談内容を<ruby>Da-is<rt>デイズ</rt></ruby>に共有しますか？<br />
+                    共有フォームが開きます。フォームを送信すると、お店用メールに内容が届きます。
+                  </p>
+                  <div className="history-detail-share-confirm-btns">
+                    <button
+                      type="button"
+                      className="history-detail-share-cancel"
+                      onClick={() => setHistoryShareConfirm(false)}
+                    >
+                      キャンセル
+                    </button>
+                    <button
+                      type="button"
+                      className="history-detail-share-go"
+                      onClick={() => handleHistoryShare(historyDetailItem)}
+                    >
+                      共有フォームを開く
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="history-detail-share-btn"
+                  disabled={historyShareStatus === "sending"}
+                  onClick={() => { setHistoryShareConfirm(true); setHistoryShareStatus(null); }}
+                >
+                  {historyShareStatus === "sending" ? "共有しています…" : "この相談をDa-isに送る"}
+                </button>
               )}
             </div>
           </div>
