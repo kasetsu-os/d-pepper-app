@@ -454,12 +454,17 @@ function App() {
   const [showShareConfirm, setShowShareConfirm] = useState(false);
   const [chipHint, setChipHint] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [historyDetail, setHistoryDetail] = useState(null);
+  const [historySelectMode, setHistorySelectMode] = useState(false);
+  const [selectedHistoryIds, setSelectedHistoryIds] = useState(new Set());
+  const [historyConfirmType, setHistoryConfirmType] = useState(null); // null | "selected" | "all"
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
   const resultCardRef = useRef(null);
   const aiAreaRef = useRef(null);
   const aiRequestIdRef = useRef(0);
   const lastEncodedImagesRef = useRef([]);
+  const lastConsultationIdRef = useRef(null);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(consultations));
@@ -608,9 +613,11 @@ function App() {
     const imagesToEncode = [...attachedImages];
     const encodedImagesPromise = Promise.all(imagesToEncode.map((img) => resizeAndEncodeImage(img)));
 
+    const newConsultId = Date.now();
+    lastConsultationIdRef.current = newConsultId;
     setConsultations((prev) => [
       {
-        id: Date.now(),
+        id: newConsultId,
         entryId: currentEntry.id,
         entryTitle: currentEntry.title,
         text,
@@ -692,6 +699,7 @@ function App() {
           console.log("Final AI response length:", cleaned.length);
           console.log("Final AI response:", cleaned);
           setAiResponse(cleaned);
+          setConsultations(prev => prev.map(c => c.id === newConsultId ? { ...c, aiResponse: cleaned } : c));
         }
       } catch (err) {
         if (requestId === aiRequestIdRef.current) {
@@ -771,6 +779,7 @@ function App() {
             : "こんにちは、Da-isの髪と頭皮の相談所『Dペッパー』です。ご相談の内容を拝見しました。気になっている状態を、もう少し具体的に書いていただくと、整理しやすくなります。";
         }
         setAiResponse(cleaned);
+        setConsultations(prev => prev.map(c => c.id === lastConsultationIdRef.current ? { ...c, aiResponse: cleaned } : c));
       }
     } catch (err) {
       if (requestId === aiRequestIdRef.current) {
@@ -1309,16 +1318,43 @@ function App() {
       {/* 履歴パネル */}
       <div
         className={`overlay${historyOpen ? " is-open" : ""}`}
-        onClick={() => setHistoryOpen(false)}
+        onClick={() => { setHistoryOpen(false); setHistorySelectMode(false); setSelectedHistoryIds(new Set()); }}
       />
       <aside className={`history-panel${historyOpen ? " is-open" : ""}`}>
         <div className="history-panel-header">
           <h2>履歴</h2>
-          <button type="button" onClick={() => setHistoryOpen(false)}>
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M6 6l12 12" /><path d="M18 6 6 18" />
-            </svg>
-          </button>
+          <div className="history-panel-actions">
+            {historySelectMode ? (
+              <>
+                {selectedHistoryIds.size > 0 && (
+                  <button type="button" className="history-action-btn history-action-btn--danger" onClick={() => setHistoryConfirmType("selected")}>
+                    {selectedHistoryIds.size}件を削除
+                  </button>
+                )}
+                <button type="button" className="history-action-btn" onClick={() => { setHistorySelectMode(false); setSelectedHistoryIds(new Set()); }}>
+                  キャンセル
+                </button>
+              </>
+            ) : (
+              <>
+                {consultations.length > 0 && (
+                  <>
+                    <button type="button" className="history-action-btn" onClick={() => { setHistorySelectMode(true); setSelectedHistoryIds(new Set()); }}>
+                      選択
+                    </button>
+                    <button type="button" className="history-action-btn history-action-btn--danger" onClick={() => setHistoryConfirmType("all")}>
+                      すべて削除
+                    </button>
+                  </>
+                )}
+                <button type="button" className="history-close-btn" onClick={() => setHistoryOpen(false)}>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 6l12 12" /><path d="M18 6 6 18" />
+                  </svg>
+                </button>
+              </>
+            )}
+          </div>
         </div>
         {consultations.length === 0 ? (
           <div className="history-empty">
@@ -1327,25 +1363,138 @@ function App() {
           </div>
         ) : (
           <div className="history-list">
-            {consultations.map((item) => (
-              <article className="history-item" key={item.id}>
-                <div className="history-meta">
-                  <span>{item.entryTitle}</span>
-                  <time>{formatDate(item.createdAt)}</time>
-                </div>
-                <h3>{item.category === "__complaint__" ? "内容を確認しました" : item.category}</h3>
-                {item.imageCount > 0 && (
-                  <span className="history-image-badge">画像 {item.imageCount}枚</span>
-                )}
-                {item.attachedUrls?.length > 0 && (
-                  <span className="history-image-badge">URL {item.attachedUrls.length}件</span>
-                )}
-                <p>{item.text}</p>
-              </article>
-            ))}
+            {consultations.map((item) => {
+              const isSelected = selectedHistoryIds.has(item.id);
+              return (
+                <article
+                  className={`history-item${historySelectMode ? " history-item--selectable" : " history-item--clickable"}${isSelected ? " history-item--selected" : ""}`}
+                  key={item.id}
+                  onClick={() => {
+                    if (historySelectMode) {
+                      setSelectedHistoryIds(prev => {
+                        const next = new Set(prev);
+                        if (next.has(item.id)) next.delete(item.id);
+                        else next.add(item.id);
+                        return next;
+                      });
+                    } else {
+                      setHistoryDetail(item);
+                    }
+                  }}
+                >
+                  {historySelectMode && (
+                    <div className={`history-checkbox${isSelected ? " history-checkbox--checked" : ""}`} aria-hidden="true">
+                      {isSelected && (
+                        <svg viewBox="0 0 24 24"><path d="M5 12l5 5L19 7" /></svg>
+                      )}
+                    </div>
+                  )}
+                  <div className="history-meta">
+                    <span>{item.entryTitle}</span>
+                    <time>{formatDate(item.createdAt)}</time>
+                  </div>
+                  <h3>{item.category === "__complaint__" ? "内容を確認しました" : item.category}</h3>
+                  {item.imageCount > 0 && (
+                    <span className="history-image-badge">画像 {item.imageCount}枚</span>
+                  )}
+                  {item.attachedUrls?.length > 0 && (
+                    <span className="history-image-badge">URL {item.attachedUrls.length}件</span>
+                  )}
+                  <p>{item.text}</p>
+                </article>
+              );
+            })}
           </div>
         )}
       </aside>
+
+      {/* 履歴詳細モーダル */}
+      {historyDetail && (
+        <div className="history-detail-overlay" onClick={() => setHistoryDetail(null)}>
+          <div className="history-detail-modal" onClick={e => e.stopPropagation()}>
+            <div className="history-detail-header">
+              <h3>相談の詳細</h3>
+              <button type="button" onClick={() => setHistoryDetail(null)} aria-label="閉じる">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 6l12 12" /><path d="M18 6 6 18" />
+                </svg>
+              </button>
+            </div>
+            <div className="history-detail-body">
+              <div className="history-detail-row">
+                <span className="history-detail-label">日時</span>
+                <span className="history-detail-value">{formatDate(historyDetail.createdAt)}</span>
+              </div>
+              <div className="history-detail-row">
+                <span className="history-detail-label">来店種別</span>
+                <span className="history-detail-value">{historyDetail.entryTitle}</span>
+              </div>
+              <div className="history-detail-row">
+                <span className="history-detail-label">カテゴリ</span>
+                <span className="history-detail-value">{historyDetail.category === "__complaint__" ? "内容を確認しました" : historyDetail.category}</span>
+              </div>
+              <div className="history-detail-row">
+                <span className="history-detail-label">分類</span>
+                <span className="history-detail-value">{historyDetail.group}</span>
+              </div>
+              <div className="history-detail-section">
+                <span className="history-detail-label">ご相談</span>
+                <p className="history-detail-text">{historyDetail.text}</p>
+              </div>
+              {historyDetail.aiResponse ? (
+                <div className="history-detail-section">
+                  <span className="history-detail-label">Dペッパーの返答</span>
+                  <p className="history-detail-text">{historyDetail.aiResponse}</p>
+                </div>
+              ) : (
+                <div className="history-detail-section">
+                  <span className="history-detail-label history-detail-label--dim">Dペッパーの返答（この相談は保存対象外です）</span>
+                </div>
+              )}
+              {historyDetail.nextAction && historyDetail.category !== "__complaint__" && (
+                <div className="history-detail-section">
+                  <span className="history-detail-label">次の案内</span>
+                  <p className="history-detail-text history-detail-text--small">{historyDetail.nextAction}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 削除確認ダイアログ */}
+      {historyConfirmType && (
+        <div className="history-confirm-overlay" onClick={() => setHistoryConfirmType(null)}>
+          <div className="history-confirm-dialog" onClick={e => e.stopPropagation()}>
+            <p>
+              {historyConfirmType === "all"
+                ? "すべての相談履歴を削除しますか？この操作は元に戻せません。"
+                : `選択した${selectedHistoryIds.size}件の相談履歴を削除しますか？この操作は元に戻せません。`}
+            </p>
+            <div className="history-confirm-buttons">
+              <button type="button" className="history-confirm-btn" onClick={() => setHistoryConfirmType(null)}>
+                キャンセル
+              </button>
+              <button
+                type="button"
+                className="history-confirm-btn history-confirm-btn--danger"
+                onClick={() => {
+                  if (historyConfirmType === "all") {
+                    setConsultations([]);
+                  } else {
+                    setConsultations(prev => prev.filter(c => !selectedHistoryIds.has(c.id)));
+                    setSelectedHistoryIds(new Set());
+                    setHistorySelectMode(false);
+                  }
+                  setHistoryConfirmType(null);
+                }}
+              >
+                削除する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
