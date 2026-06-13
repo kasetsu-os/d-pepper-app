@@ -158,7 +158,14 @@ function classifyConsult(text) {
       guidance: "カラーの仕上がりはもとの髪の明るさ・色・ダメージ状態によって変わります。理想のイメージを写真や言葉でお聞かせいただき、実際の髪の状態と照らし合わせてご提案します。",
       nextAction: "この内容は、来店時のメモや予約時の備考にも使えます。直接相談したい場合は、予約ページやお電話もご利用ください。",
     };
-  if (v.includes("カット") || v.includes("似合う") || v.includes("似合わせ") || v.includes("顔型") || v.includes("ショート") || v.includes("ボブ") || v.includes("前髪") || v.includes("ストレート") || v.includes("長さ") || v.includes("ヘアスタイル") || v.includes("髪型") || v.includes("なりたい") || v.includes("にしたい") || v.includes("スタイル"))
+  /* ─── ホームケア優先（「ショート」等があっても主題がケアなら商品相談へ） ─── */
+  const isHomeCareOverride =
+    v.includes("トリートメントが面倒") || v.includes("コンディショナーが面倒") ||
+    v.includes("オイルだけ") || v.includes("シャンプー後にオイル") ||
+    v.includes("時間を置く") || v.includes("流すのが面倒") ||
+    v.includes("顔がぬるぬる") || v.includes("市販トリートメント") ||
+    v.includes("市販コンディショナー") || v.includes("美容室で買ったトリートメント");
+  if (!isHomeCareOverride && (v.includes("カット") || v.includes("似合う") || v.includes("似合わせ") || v.includes("顔型") || v.includes("ショート") || v.includes("ボブ") || v.includes("前髪") || v.includes("ストレート") || v.includes("長さ") || v.includes("ヘアスタイル") || v.includes("髪型") || v.includes("なりたい") || v.includes("にしたい") || v.includes("スタイル")))
     return {
       category: "カット・似合わせ相談", group: "デザイン",
       summary: "カットやヘアスタイルの似合わせに関する相談として記録しました。",
@@ -1453,10 +1460,6 @@ function App() {
               <div className="history-detail-row">
                 <span className="history-detail-label">日時</span>
                 <span className="history-detail-value">{formatDate(historyDetailItem.createdAt)}</span>
-              </div>
-              <div className="history-detail-row">
-                <span className="history-detail-label">来店種別</span>
-                <span className="history-detail-value">{historyDetailItem.entryTitle}</span>
               </div>
               <div className="history-detail-row">
                 <span className="history-detail-label">カテゴリ</span>
