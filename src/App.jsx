@@ -143,7 +143,15 @@ function classifyConsult(text) {
     };
 
   /* ─── デザイン（ケア・商品より先に判定） ─── */
-  if (v.includes("カラー") || v.includes("染め") || v.includes("ハイライト") || v.includes("バレイヤージュ") || v.includes("インナーカラー") || v.includes("グラデーション") || v.includes("ブリーチ") || v.includes("アッシュ") || v.includes("ベージュ") || v.includes("明るく") || v.includes("暗く") || v.includes("色味") || v.includes("透明感") || v.includes("韓国") || v.includes("外国人風") || v.includes("ヘアカラー") || v.includes("色落ち") || v.includes("暖色") || v.includes("寒色") || v.includes("ピンク") || v.includes("ラベンダー") || v.includes("ブルー") || v.includes("グリーン") || v.includes("オレンジ") || v.includes("ヴァイオレット"))
+  // 「カラーしていない」「カラーもパーマもしていません」のような否定文脈ではカラー相談に入れない
+  const isColorNegation =
+    v.includes("カラーしていない") || v.includes("カラーしていません") || v.includes("カラーしてない") ||
+    v.includes("カラーもパーマもしていない") || v.includes("カラーもパーマもしていません") || v.includes("カラーもパーマもしてない") ||
+    v.includes("カラーなし") ||
+    v.includes("カラーをしていない") || v.includes("カラーをしていません") ||
+    v.includes("カラーはしていない") || v.includes("カラーはしていません") ||
+    v.includes("カラーやパーマをしていない") || v.includes("カラーやパーマをしていません");
+  if (!isColorNegation && (v.includes("カラー") || v.includes("染め") || v.includes("ハイライト") || v.includes("バレイヤージュ") || v.includes("インナーカラー") || v.includes("グラデーション") || v.includes("ブリーチ") || v.includes("アッシュ") || v.includes("ベージュ") || v.includes("明るく") || v.includes("暗く") || v.includes("色味") || v.includes("透明感") || v.includes("韓国") || v.includes("外国人風") || v.includes("ヘアカラー") || v.includes("色落ち") || v.includes("暖色") || v.includes("寒色") || v.includes("ピンク") || v.includes("ラベンダー") || v.includes("ブルー") || v.includes("グリーン") || v.includes("オレンジ") || v.includes("ヴァイオレット")))
     return {
       category: "カラー相談", group: "デザイン",
       summary: "ヘアカラーに関する相談として記録しました。",
@@ -175,7 +183,7 @@ function classifyConsult(text) {
     };
 
   /* ─── ケア ─── */
-  if (v.includes("シャンプー") || v.includes("トリートメント") || v.includes("ミルボン") || v.includes("オージュア") || v.includes("オイル") || v.includes("商品") || v.includes("アウトバス") || v.includes("ホームケア") || v.includes("市販"))
+  if (v.includes("シャンプー") || v.includes("トリートメント") || v.includes("コンディショナー") || v.includes("ミルボン") || v.includes("オージュア") || v.includes("オイル") || v.includes("商品") || v.includes("アウトバス") || v.includes("ホームケア") || v.includes("市販") || v.includes("ぬるぬる") || v.includes("ぬるつき") || v.includes("時間を置く") || v.includes("サロン専売") || v.includes("洗い流さない"))
     return {
       category: "商品相談", group: "ケア",
       summary: "ホームケア商品や使い方に関する相談として記録しました。",
