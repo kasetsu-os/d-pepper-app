@@ -467,6 +467,7 @@ function App() {
   const [historyConfirmType, setHistoryConfirmType] = useState(null); // null | "selected" | "unfavorited" | "all-with-favorites"
   const [historyShareConfirm, setHistoryShareConfirm] = useState(false);
   const [historyShareStatus, setHistoryShareStatus] = useState(null); // null | "sending" | "sent" | "error"
+  const [historyShareReply, setHistoryShareReply] = useState("返信希望"); // "返信希望" | "返信不要"
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
   const resultCardRef = useRef(null);
@@ -819,16 +820,18 @@ function App() {
     setHistoryDetailId(null);
     setHistoryShareConfirm(false);
     setHistoryShareStatus(null);
+    setHistoryShareReply("返信希望");
   }
 
-  async function handleHistoryShare(item) {
+  async function handleHistoryShare(item, replyRequest) {
+    const reply = replyRequest === "返信不要" ? "返信不要" : "返信希望";
     setHistoryShareStatus("sending");
     setHistoryShareConfirm(false);
     try {
       const res = await fetch("/api/share-history", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ item }),
+        body: JSON.stringify({ item, replyRequest: reply }),
       });
       if (res.ok) {
         setHistoryShareStatus("sent");
@@ -1548,9 +1551,28 @@ function App() {
               ) : historyShareConfirm ? (
                 <div className="history-detail-share-confirm">
                   <p className="history-detail-share-confirm-text">
-                    この相談内容を<ruby>Da-is<rt>デイズ</rt></ruby>に共有しますか？<br />
-                    共有フォームが開きます。フォームを送信すると、お店用メールに内容が届きます。
+                    この相談内容を<ruby>Da-is<rt>デイズ</rt></ruby>に共有します。<br />
+                    お店用メールに内容が届きます。
                   </p>
+                  <div className="history-detail-reply-toggle">
+                    <span className="history-detail-reply-label">返信の希望</span>
+                    <div className="history-detail-reply-btns">
+                      <button
+                        type="button"
+                        className={`history-detail-reply-btn${historyShareReply === "返信希望" ? " history-detail-reply-btn--active" : ""}`}
+                        onClick={() => setHistoryShareReply("返信希望")}
+                      >
+                        返信希望
+                      </button>
+                      <button
+                        type="button"
+                        className={`history-detail-reply-btn${historyShareReply === "返信不要" ? " history-detail-reply-btn--active" : ""}`}
+                        onClick={() => setHistoryShareReply("返信不要")}
+                      >
+                        返信不要
+                      </button>
+                    </div>
+                  </div>
                   <div className="history-detail-share-confirm-btns">
                     <button
                       type="button"
@@ -1562,9 +1584,9 @@ function App() {
                     <button
                       type="button"
                       className="history-detail-share-go"
-                      onClick={() => handleHistoryShare(historyDetailItem)}
+                      onClick={() => handleHistoryShare(historyDetailItem, historyShareReply)}
                     >
-                      共有フォームを開く
+                      共有する
                     </button>
                   </div>
                 </div>

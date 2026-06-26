@@ -81,16 +81,30 @@ function onFormSubmit(e) {
       '添付情報', '添付', 'attach', '添付画像',
     ]);
 
-    // 返信希望・返信不要フィールド（値がなければ「記録なし」として扱う）
-    const replyField = getValue(namedValues, [
+    // ── 返信希望フィールドを取得 ────────────────────────────
+    // 優先順: consultTextに埋め込まれた「返信希望：」行 → namedValues → fallback「返信希望」
+    // ※ 空欄・未入力・undefined はすべて「返信希望」として扱う（返信不要は明示的な選択のみ）
+
+    // 1) まず consultText の構造から抽出（/api/share-history が埋め込む形式）
+    let replyFromText = '';
+    if (isHistoryShare) {
+      replyFromText = extractLine(consultText, '返信希望：');
+    }
+
+    // 2) namedValues のフォームフィールドからも取得を試みる
+    const replyFromForm = getValue(namedValues, [
       '返信', '返信希望', '返信を希望しますか', 'お返事',
       '返信の希望', 'reply', 'reply_request',
     ]);
-    // 「返信希望」を含む場合は希望あり、「不要」「しない」等を含む場合は不要とみなす
-    const wantsReply = replyField.includes('希望') || replyField === 'はい' || replyField === 'Yes';
-    const noReply    = replyField.includes('不要') || replyField.includes('しない') || replyField === 'いいえ' || replyField === 'No';
-    // 件名サフィックス（返信希望の場合のみ付加。不要または未記入はサフィックスなし）
-    const subjectSuffix = wantsReply ? '【返信希望】' : (noReply ? '【返信不要】' : '');
+
+    // 3) 両方を合わせて判定。空欄なら「返信希望」にフォールバック
+    const replyRaw = replyFromText || replyFromForm;
+    const noReply  = replyRaw.includes('不要') || replyRaw.includes('しない') || replyRaw === 'いいえ' || replyRaw === 'No';
+    const replyField  = noReply ? '返信不要' : '返信希望'; // 明示的に「不要」以外はすべて「返信希望」
+    const wantsReply  = !noReply;
+
+    // 件名サフィックス
+    const subjectSuffix = wantsReply ? '【返信希望】' : '【返信不要】';
 
     // お客様のメールアドレス（返信希望時に表示）
     const customerEmail = getValue(namedValues, [
@@ -255,7 +269,7 @@ function testOnFormSubmit() {
   const fakeEvent = {
     namedValues: {
       'ご相談内容': [
-        '【Dペッパー履歴共有】\n相談日時：2026/06/26 14:30\nカテゴリ：カラー相談\n分類：ケア\nお気に入り：⭐️\n履歴ID：1719370200000\n\n＝＝ご相談内容＝＝\n最近カラーをしたのですが、色の落ちが早い気がします。ホームケアで改善できますか？\n\n＝＝次の案内＝＝\n色持ちには、カラーシャンプーと洗い流さないトリートメントの組み合わせが効果的です。',
+        '【Dペッパー履歴共有】\n相談日時：2026/06/26 14:30\nカテゴリ：カラー相談\n分類：ケア\n返信希望：返信不要\nお気に入り：⭐️\n履歴ID：1719370200000\n\n＝＝ご相談内容＝＝\n最近カラーをしたのですが、色の落ちが早い気がします。ホームケアで改善できますか？\n\n＝＝次の案内＝＝\n色持ちには、カラーシャンプーと洗い流さないトリートメントの組み合わせが効果的です。',
       ],
       'Dペッパーの返答・メモ': [
         '色落ちが気になる場合、まず洗い方を見直すことが効果的です。お湯の温度を38度以下にし、洗浄力の強いシャンプーを避けることで色持ちが改善されます。',
@@ -278,7 +292,7 @@ function testOnFormSubmitWithReply() {
   const fakeEvent = {
     namedValues: {
       'ご相談内容': [
-        '【Dペッパー履歴共有】\n相談日時：2026/06/26 15:00\nカテゴリ：頭皮相談\n分類：頭皮\n履歴ID：1719372000000\n\n＝＝ご相談内容＝＝\n頭皮がかゆくてフケが出やすいです。シャンプーを変えた方がいいでしょうか。',
+        '【Dペッパー履歴共有】\n相談日時：2026/06/26 15:00\nカテゴリ：頭皮相談\n分類：頭皮\n返信希望：返信希望\n履歴ID：1719372000000\n\n＝＝ご相談内容＝＝\n頭皮がかゆくてフケが出やすいです。シャンプーを変えた方がいいでしょうか。',
       ],
       'Dペッパーの返答・メモ': [
         '頭皮のかゆみやフケには、頭皮の状態を整えるシャンプー選びが重要です。',

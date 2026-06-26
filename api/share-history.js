@@ -3,7 +3,7 @@
 const FORM_ACTION =
   "https://docs.google.com/forms/d/e/1FAIpQLSevLDDVaXd3S0eMHNqL7GTomvm3TY8SwUFQO62WeOgRJd8nJQ/formResponse";
 
-function buildConsultText(item) {
+function buildConsultText(item, replyRequest) {
   const dateStr = new Intl.DateTimeFormat("ja-JP", {
     year: "numeric", month: "2-digit", day: "2-digit",
     hour: "2-digit", minute: "2-digit",
@@ -14,12 +14,15 @@ function buildConsultText(item) {
       ? "内容を確認しました"
       : (item.category ?? "");
   const isFav = item.favorite ?? false;
+  // 未指定・空欄・undefined → 返信希望 として扱う
+  const reply = replyRequest === "返信不要" ? "返信不要" : "返信希望";
 
   return [
     "【Dペッパー履歴共有】",
     `相談日時：${dateStr}`,
     `カテゴリ：${catDisplay}`,
     `分類：${item.group ?? ""}`,
+    `返信希望：${reply}`,
     item.entryTitle ? `来店種別：${item.entryTitle}` : null,
     isFav ? "お気に入り：⭐️" : null,
     `履歴ID：${item.id}`,
@@ -44,17 +47,20 @@ export async function POST(request) {
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { item } = body;
+  const { item, replyRequest } = body;
   if (!item) {
     console.error(`[${ts}] History share error | message: item is required`);
     return Response.json({ error: "item is required" }, { status: 400 });
   }
 
+  // 未指定・空欄・undefined → 返信希望 として扱う
+  const reply = replyRequest === "返信不要" ? "返信不要" : "返信希望";
+
   console.log(
-    `[${ts}] History share started | category: ${item.category} | hasAiResponse: ${Boolean(item.aiResponse)}`
+    `[${ts}] History share started | category: ${item.category} | hasAiResponse: ${Boolean(item.aiResponse)} | reply: ${reply}`
   );
 
-  const consultText = buildConsultText(item);
+  const consultText = buildConsultText(item, reply);
   const aiText = item.aiResponse
     ? item.aiResponse
     : "この相談は詳細保存前の履歴のため、Dペッパーの返答本文は残っていません。";
