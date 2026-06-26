@@ -13,6 +13,7 @@ import {
   postCutIssueRules,
   homeCareConditionerRules,
   salonTreatmentRules,
+  hairMythRules,
   imageTranslationRules,
   bannedPhrases,
   preferredPhrases,
@@ -45,6 +46,8 @@ export function buildDpepperPrompt({ text, category, group, summary, guidance, e
   if (isHomeCareConditioner) { categoryRulesParts.push(homeCareConditionerRules); appliedRuleNames.push("homeCareConditionerRules"); }
   const isSalonTreatment = /酸性トリートメント|アメージングトリートメント|アイロン使用|アイロンを使うトリートメント|熱を使うトリートメント|酸熱トリートメント|酸熱|酸性ストレート|酸性縮毛矯正|酸熱ストレート|サロントリートメント|髪質改善|艶重視|ケア重視|長持ち重視|トリートメントの持ち|トリートメントはどのくらい持/.test(text);
   if (isSalonTreatment) { categoryRulesParts.push(salonTreatmentRules); appliedRuleNames.push("salonTreatmentRules"); }
+  const isHairMythConsult = /坊主|丸刈り|スキンフェード|剃ると|剃ったら|剃って|剃り込み|坊主にしたら|坊主にすると|坊主で髪|短くしたら太|短く切ったら太|短く切ると太|短くなったら太|毛が太くなった|毛が硬くなった|髪が太くなった|髪が硬くなった|クセが強くなった|クセが強くなる|クセが出てきた|髪が増えた|毛が増えた|強くなった|剃ると太くなる|剃ると硬くなる|短く切ると変わる|坊主にすると変わる|短くすると髪質|短くすると髪が/.test(text);
+  if (isHairMythConsult) { categoryRulesParts.push(hairMythRules); appliedRuleNames.push("hairMythRules"); }
   if (hasImages) { categoryRulesParts.push(imageTranslationRules); appliedRuleNames.push("imageTranslationRules"); }
   console.log("[DPEPPER PROMPT] hasImages:", hasImages, "| imageTranslationRules applied:", hasImages);
   console.log("[DPEPPER PROMPT] applied rules:", appliedRuleNames.join(", "));
