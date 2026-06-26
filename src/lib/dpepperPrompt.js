@@ -14,6 +14,7 @@ import {
   homeCareConditionerRules,
   salonTreatmentRules,
   hairMythRules,
+  waterRefreshRules,
   imageTranslationRules,
   bannedPhrases,
   preferredPhrases,
@@ -48,6 +49,8 @@ export function buildDpepperPrompt({ text, category, group, summary, guidance, e
   if (isSalonTreatment) { categoryRulesParts.push(salonTreatmentRules); appliedRuleNames.push("salonTreatmentRules"); }
   const isHairMythConsult = /坊主|丸刈り|スキンフェード|剃ると|剃ったら|剃って|剃り込み|坊主にしたら|坊主にすると|坊主で髪|短くしたら太|短く切ったら太|短く切ると太|短くなったら太|毛が太くなった|毛が硬くなった|髪が太くなった|髪が硬くなった|クセが強くなった|クセが強くなる|クセが出てきた|髪が増えた|毛が増えた|強くなった|剃ると太くなる|剃ると硬くなる|短く切ると変わる|坊主にすると変わる|短くすると髪質|短くすると髪が/.test(text);
   if (isHairMythConsult) { categoryRulesParts.push(hairMythRules); appliedRuleNames.push("hairMythRules"); }
+  const isWaterRefreshConsult = /ウォーターリフレ|Water Refresh|グラングリーン|GRAND GREEN|つむじ割れ|つむじが割れ|分け目が割れ|根元が割れ|根元の割れ|根元の分け目|根元の立ち上がり|根元が立ち上がら|トップがぺたんこ|トップがぺたん|トップがつぶれ|ボリュームがつぶれ|根元がつぶれ|つむじ周り|つむじ付近|分け目が気になる|頭皮ケア商品|頭皮ケアアイテム|頭皮を整える|頭皮環境を整え|頭皮の状態を整え|頭皮の乾燥|頭皮のかゆみ|頭皮が乾燥|頭皮の違和感|頭皮にスプレー|頭皮トラブルのケア|朝晩 頭皮|頭皮 朝晩/.test(text);
+  if (isWaterRefreshConsult) { categoryRulesParts.push(waterRefreshRules); appliedRuleNames.push("waterRefreshRules"); }
   if (hasImages) { categoryRulesParts.push(imageTranslationRules); appliedRuleNames.push("imageTranslationRules"); }
   console.log("[DPEPPER PROMPT] hasImages:", hasImages, "| imageTranslationRules applied:", hasImages);
   console.log("[DPEPPER PROMPT] applied rules:", appliedRuleNames.join(", "));
