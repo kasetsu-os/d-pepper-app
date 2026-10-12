@@ -47,6 +47,18 @@ const worst = { 1280: 993_464, 1024: 598_008, 800: 327_848 };
   const r = await B.encodeWithinBudget(imgs(["a", "b"]), fakeEncoder({ a: huge, b: huge }));
   check("最後の段階でも超える場合は送信しない（tooLarge）", r.tooLarge && r.images.length === 0);
 }
+// 4b) 合計は上限内でも、1枚が1枚あたりの上限を超えれば再圧縮に進む（サーバーと同じ条件）
+{
+  const sizes = { a: { 1280: 2_000_004, 1024: 1_200_000, 800: 700_000 } };
+  const r = await B.encodeWithinBudget(imgs(["a"]), fakeEncoder(sizes));
+  check("1枚 2,000,004文字は再圧縮して 1024px で送る", r.step?.max === 1024 && !r.tooLarge, `合計 ${r.totalChars}`);
+}
+// 4c) 上限値は画面側・サーバー側で同じファイルから読む
+{
+  const L = await import(path.join(root, "src/lib/limits.js"));
+  check("画面側の上限は共通ファイルの値", B.MAX_IMAGE_B64_CHARS === L.MAX_IMAGE_B64_CHARS && B.IMAGE_BUDGET_CHARS === L.IMAGE_BUDGET_CHARS && B.REQUEST_LIMIT_BYTES === L.REQUEST_LIMIT_BYTES);
+  check("送信全体の上限 < サーバー上限 < 4.5MB", L.REQUEST_LIMIT_BYTES < L.SERVER_MAX_BODY_BYTES && L.SERVER_MAX_BODY_BYTES < 4_500_000);
+}
 // 5) 画像なし
 {
   const r = await B.encodeWithinBudget([], fakeEncoder({}));
@@ -61,7 +73,6 @@ const worst = { 1280: 993_464, 1024: 598_008, 800: 327_848 };
   const images = [0, 1, 2].map((i) => ({ name: `photo-${i}.jpg`, mimeType: "image/jpeg", data: "A".repeat(per) }));
   const bytes = B.bodyByteLength({ prompt, urls: ["https://beauty.hotpepper.jp/x", "https://example.jp/y", "https://example.jp/z"], images, mode: "customer" });
   check("最長の指示文 + 画像上限ぎりぎり3枚 の送信データが全体上限内", bytes <= B.REQUEST_LIMIT_BYTES, `${bytes} bytes ≦ ${B.REQUEST_LIMIT_BYTES}`);
-  check("全体上限はサーバー上限(4,400,000)・Vercel上限(4.5MB)より小さい", B.REQUEST_LIMIT_BYTES < 4_400_000);
 }
 
 // 7) クライアント側の最終確認：上限を超える送信は fetch を呼ばずに止める

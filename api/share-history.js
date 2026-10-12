@@ -1,4 +1,5 @@
 import { originAllowed, rateLimited, readJsonLimited, reject } from "./_guard.js";
+import { SHARE_MAX_BODY_BYTES } from "../src/lib/limits.js";
 
 // POST to Google Forms formResponse endpoint (server-side)
 // Reuses the same form that powers the existing Da-is share flow
@@ -52,7 +53,7 @@ export async function POST(request) {
     return reject(429, "too many requests");
   }
 
-  const parsed = await readJsonLimited(request, 100_000);
+  const parsed = await readJsonLimited(request, SHARE_MAX_BODY_BYTES);
   if (parsed.error === "too_large") return reject(413, "request too large");
   if (parsed.error) {
     console.error(`[${ts}] History share error | message: Invalid JSON body`);

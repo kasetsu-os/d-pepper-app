@@ -1,8 +1,10 @@
 import { bodyByteLength, PAYLOAD_TOO_LARGE, REQUEST_LIMIT_BYTES } from "./imageBudget.js";
+import { MAX_URLS } from "./limits.js";
 
 export async function askGemini(prompt, urls = [], images = [], mode = "customer") {
   console.log("Sending images count:", images?.length || 0);
-  const body = JSON.stringify({ prompt, urls, images, mode });
+  // URL欄と相談文中のURLを合わせると上限を超えることがあるため、サーバーの上限件数までに揃える
+  const body = JSON.stringify({ prompt, urls: (urls || []).slice(0, MAX_URLS), images, mode });
 
   // 送信前に、実際に送るデータ全体の容量を測る（2026-10 保守点検）
   const bytes = bodyByteLength(body);

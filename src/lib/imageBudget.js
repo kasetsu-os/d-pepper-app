@@ -4,10 +4,9 @@
 // 縮小設定（px・品質）は容量の保証にならないため、変換後の実際の文字数を測り、
 // 超えていれば段階的に再圧縮し、それでも超える場合は送信しない。
 
-// 画像（base64文字列）の合計の上限。指示文・相談文などの余白を残す
-export const IMAGE_BUDGET_CHARS = 3_900_000;
-// 送信データ全体（JSON本文）の上限。サーバー側 4.4MB・Vercel 4.5MB より手前
-export const REQUEST_LIMIT_BYTES = 4_300_000;
+// 上限値はサーバーと共通（src/lib/limits.js）
+import { IMAGE_BUDGET_CHARS, MAX_IMAGE_B64_CHARS, REQUEST_LIMIT_BYTES } from "./limits.js";
+export { IMAGE_BUDGET_CHARS, MAX_IMAGE_B64_CHARS, REQUEST_LIMIT_BYTES };
 
 export const ENCODE_STEPS = [
   { max: 1280, quality: 0.75 },
@@ -27,14 +26,19 @@ export function bodyByteLength(body) {
 
 // encodeFn(imgObj, max, quality) → Promise<{ name, mimeType, data } | null>
 // 戻り値: { images, step, totalChars, tooLarge }
-export async function encodeWithinBudget(imgObjs, encodeFn, { budget = IMAGE_BUDGET_CHARS, steps = ENCODE_STEPS } = {}) {
+// 送ってよい条件：「全画像の合計が上限以内」かつ「すべての画像が1枚あたりの上限以内」
+export function withinLimits(images, { budget = IMAGE_BUDGET_CHARS, perImage = MAX_IMAGE_B64_CHARS } = {}) {
+  return totalChars(images) <= budget && images.every((img) => (img?.data?.length || 0) <= perImage);
+}
+
+export async function encodeWithinBudget(imgObjs, encodeFn, { budget = IMAGE_BUDGET_CHARS, perImage = MAX_IMAGE_B64_CHARS, steps = ENCODE_STEPS } = {}) {
   if (!imgObjs.length) return { images: [], step: null, totalChars: 0, tooLarge: false };
   let last = { images: [], totalChars: 0 };
   for (const step of steps) {
     const images = (await Promise.all(imgObjs.map((o) => encodeFn(o, step.max, step.quality)))).filter(Boolean);
     const chars = totalChars(images);
     last = { images, totalChars: chars };
-    if (chars <= budget) return { images, step, totalChars: chars, tooLarge: false };
+    if (withinLimits(images, { budget, perImage })) return { images, step, totalChars: chars, tooLarge: false };
   }
   return { images: [], step: null, totalChars: last.totalChars, tooLarge: true };
 }

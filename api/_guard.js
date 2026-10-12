@@ -28,30 +28,54 @@ export function rateLimited(request, { key, limit, windowMs }) {
 }
 
 // 自分のサイト以外のページから呼ばれた場合は断る。
-// （スクリプトから直接叩く攻撃は防げないが、他サイトに埋め込まれて使われるのは防ぐ）
-const ALLOWED_ORIGINS = new Set(
-  [
-    "https://d-pepper-app.vercel.app",
-    ...(process.env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()),
-  ].filter(Boolean)
-);
-
-export function originAllowed(request) {
-  const origin = request.headers.get("origin");
-  if (!origin) return false;
-  if (ALLOWED_ORIGINS.has(origin)) return true;
-  // Vercel のプレビュー環境（d-pepper-app-xxxx.vercel.app）は許可
-  return /^https:\/\/d-pepper-app(-[a-z0-9-]+)?\.vercel\.app$/.test(origin) ||
-    /^http:\/\/localhost:\d+$/.test(origin);
+// （送信元情報は偽装できるため、APIへの直接アクセスは防げない。ブラウザ経由の他サイト利用を制限する補助策）
+// 許可は「完全一致」のみ。似た名前のプレビューURLは許可しない。
+export function allowedOrigins(env = process.env) {
+  const list = ["https://d-pepper-app.vercel.app"];
+  if (env.VERCEL_PROJECT_PRODUCTION_URL) list.push(`https://${env.VERCEL_PROJECT_PRODUCTION_URL}`);
+  // プレビュー環境では、そのデプロイ自身のURLとブランチURLだけを許可（Vercel が自動で設定する値）
+  if (env.VERCEL_ENV === "preview") {
+    if (env.VERCEL_URL) list.push(`https://${env.VERCEL_URL}`);
+    if (env.VERCEL_BRANCH_URL) list.push(`https://${env.VERCEL_BRANCH_URL}`);
+  }
+  // 独自ドメインなど、手動で追加する接続元（カンマ区切り・完全一致）
+  for (const o of (env.ALLOWED_ORIGINS || "").split(",")) if (o.trim()) list.push(o.trim().replace(/\/$/, ""));
+  // ローカル開発（vercel dev / 環境変数なし）のときだけ localhost を許可。本番・プレビューでは許可しない
+  const isDeployed = env.VERCEL_ENV === "production" || env.VERCEL_ENV === "preview";
+  return { origins: new Set(list), allowLocalhost: !isDeployed };
 }
 
+export function originAllowed(request, env = process.env) {
+  const origin = request.headers.get("origin");
+  if (!origin) return false;
+  const { origins, allowLocalhost } = allowedOrigins(env);
+  if (origins.has(origin)) return true;
+  return allowLocalhost && /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin);
+}
+
+// 本文を「バイト数」で数えながら読み、上限を超えた時点で読み込みを止める
 export async function readJsonLimited(request, maxBytes) {
   const len = Number(request.headers.get("content-length") || 0);
   if (len > maxBytes) return { error: "too_large" };
-  const raw = await request.text();
-  if (raw.length > maxBytes) return { error: "too_large" };
+  if (!request.body) return { error: "invalid_json" };
+  const reader = request.body.getReader();
+  const chunks = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel().catch(() => {});
+      return { error: "too_large" };
+    }
+    chunks.push(value);
+  }
+  const buf = new Uint8Array(total);
+  let off = 0;
+  for (const c of chunks) { buf.set(c, off); off += c.byteLength; }
   try {
-    return { body: JSON.parse(raw) };
+    return { body: JSON.parse(new TextDecoder().decode(buf)) };
   } catch {
     return { error: "invalid_json" };
   }

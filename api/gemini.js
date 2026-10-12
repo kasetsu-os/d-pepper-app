@@ -1,16 +1,15 @@
 import { originAllowed, rateLimited, readJsonLimited, reject } from "./_guard.js";
+import {
+  SERVER_MAX_BODY_BYTES, MAX_PROMPT_CHARS, MAX_IMAGES, MAX_IMAGE_B64_CHARS,
+  ALLOWED_IMAGE_TYPES as ALLOWED_IMAGE_TYPE_LIST, MAX_URLS,
+} from "../src/lib/limits.js";
 
 const NO_RETRY_STATUSES = new Set([400, 401, 403]);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ── 2026-10 保守点検：入力の上限 ──────────────────────────
-// 通常の相談（最長クラスで約1.3万文字のプロンプト・画像3枚）は通る値にしてある
-const MAX_BODY_BYTES = 4_400_000;     // Vercel の上限 4.5MB の手前
-const MAX_PROMPT_CHARS = 40_000;
-const MAX_IMAGES = 3;
-const MAX_IMAGE_B64_CHARS = 2_000_000; // 1枚あたり約1.5MB
-const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-const MAX_URLS = 3;
+// 値は src/lib/limits.js で画面側と共通管理
+const ALLOWED_IMAGE_TYPES = new Set(ALLOWED_IMAGE_TYPE_LIST);
 const ALLOWED_MODES = new Set(["customer", "recruit"]);
 // URL読み込みは SSRF 対策が整うまでサーバー側で停止。
 // Vercel 環境変数 URL_FETCH_ENABLED=true を入れない限り、外部URLへは一切接続しない。
@@ -172,7 +171,7 @@ export async function POST(request) {
     return Response.json({ error: "server not configured" }, { status: 500 });
   }
 
-  const parsed = await readJsonLimited(request, MAX_BODY_BYTES);
+  const parsed = await readJsonLimited(request, SERVER_MAX_BODY_BYTES);
   if (parsed.error === "too_large") return reject(413, "request too large");
   if (parsed.error) return reject(400, "Invalid JSON body");
   const body = parsed.body || {};
