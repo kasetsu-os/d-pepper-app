@@ -205,7 +205,12 @@ export async function POST(request) {
   let urlStatus = "not_provided";
   let urlSection = "";
 
-  if (validUrls.length > 0) {
+  if (validUrls.length > 0 && !URL_FETCH_ENABLED) {
+    // URL読み込み停止中：外部へは接続せず、停止中であることをお客様に伝える
+    urlStatus = "disabled";
+    console.log("URL read status: disabled");
+    urlSection = `\n【URL参照内容】\nurlStatus: disabled（URL読み取り機能は現在一時停止中）\n応答の冒頭で必ず「現在、貼っていただいたURLの内容を読み取る機能は一時停止しています。商品名や気になっている内容を文章で教えていただければ、それをもとに整理します。」と伝えること。そのうえで相談文をもとに見るポイントを整理する。URLの中身を推測して書かないこと。\n`;
+  } else if (validUrls.length > 0) {
     const urlResults = await Promise.all(validUrls.map((u) => fetchUrlContent(u)));
     const readableResults = urlResults.filter((r) => r.ok && r.text);
     const unreadableResults = urlResults.filter((r) => !r.ok || !r.text);

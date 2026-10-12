@@ -309,7 +309,7 @@ function resizeAndEncodeImage(imgObj) {
     const img = new window.Image();
     const objectUrl = URL.createObjectURL(file);
     img.onload = () => {
-      const MAX = 1600;
+      const MAX = 1280; // 2026-10: 3枚合計で Vercel の 4.5MB 上限に収まるよう縮小
       let { width, height } = img;
       if (width > MAX || height > MAX) {
         if (width >= height) { height = Math.round(height * MAX / width); width = MAX; }
@@ -328,7 +328,7 @@ function resizeAndEncodeImage(imgObj) {
           reader.readAsDataURL(blob);
         },
         "image/jpeg",
-        0.8
+        0.75
       );
     };
     img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(null); };
