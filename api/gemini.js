@@ -1,7 +1,22 @@
+import { originAllowed, rateLimited, readJsonLimited, reject } from "./_guard.js";
+
 const NO_RETRY_STATUSES = new Set([400, 401, 403]);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function fetchGemini(apiUrl, requestBody, hasImages) {
+// ── 2026-10 保守点検：入力の上限 ──────────────────────────
+// 通常の相談（最長クラスで約1.3万文字のプロンプト・画像3枚）は通る値にしてある
+const MAX_BODY_BYTES = 4_400_000;     // Vercel の上限 4.5MB の手前
+const MAX_PROMPT_CHARS = 40_000;
+const MAX_IMAGES = 3;
+const MAX_IMAGE_B64_CHARS = 2_000_000; // 1枚あたり約1.5MB
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const MAX_URLS = 3;
+const ALLOWED_MODES = new Set(["customer", "recruit"]);
+// URL読み込みは SSRF 対策が整うまでサーバー側で停止。
+// Vercel 環境変数 URL_FETCH_ENABLED=true を入れない限り、外部URLへは一切接続しない。
+const URL_FETCH_ENABLED = process.env.URL_FETCH_ENABLED === "true";
+
+async function fetchGemini(apiUrl, apiKey, requestBody, hasImages) {
   const timeoutMs = hasImages ? 35000 : 25000;
   const retryDelays = [500, 1000];
   const maxAttempts = 3;
@@ -13,7 +28,7 @@ async function fetchGemini(apiUrl, requestBody, hasImages) {
     try {
       const res = await fetch(apiUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
         body: JSON.stringify(requestBody),
         signal: controller.signal,
       });
@@ -66,8 +81,29 @@ function normalizeUrl(rawUrl) {
   }
 }
 
+// 接続してよいURLかの最低限の判定（https・通常のドメイン名のみ）
+function isSafePublicUrl(rawUrl) {
+  let u;
+  try { u = new URL(rawUrl); } catch { return false; }
+  if (u.protocol !== "https:") return false;
+  if (u.username || u.password) return false;
+  if (u.port && u.port !== "443") return false;
+  const host = u.hostname.toLowerCase();
+  if (!host.includes(".")) return false;                       // localhost / 社内名
+  if (/^[\d.]+$/.test(host) || host.includes(":") || host.startsWith("[")) return false; // IP直書き
+  if (/(\.local|\.internal|\.localhost|\.lan|\.home|\.corp)$/.test(host)) return false;
+  if (host === "metadata.google.internal") return false;
+  return true;
+}
+
 async function fetchUrlContent(rawUrl) {
   const normalizedUrl = normalizeUrl(rawUrl);
+  if (!URL_FETCH_ENABLED) {
+    return { originalUrl: rawUrl, normalizedUrl, ok: false, error: "url fetch disabled" };
+  }
+  if (!isSafePublicUrl(normalizedUrl)) {
+    return { originalUrl: rawUrl, normalizedUrl, ok: false, error: "blocked url" };
+  }
   console.log("Fetching URL host:", new URL(normalizedUrl).hostname);
 
   const controller = new AbortController();
@@ -75,7 +111,7 @@ async function fetchUrlContent(rawUrl) {
   try {
     const res = await fetch(normalizedUrl, {
       signal: controller.signal,
-      redirect: "follow",
+      redirect: "manual", // 転送先を自動で追わない（内部アドレスへ誘導されるのを防ぐ）
       headers: {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -85,7 +121,21 @@ async function fetchUrlContent(rawUrl) {
     clearTimeout(timer);
     console.log("Fetch status:", res.status, "| ok:", res.ok);
     if (!res.ok) return { originalUrl: rawUrl, normalizedUrl, ok: false, error: `HTTP ${res.status}` };
-    const html = await res.text();
+    const ctype = res.headers.get("content-type") || "";
+    if (!/text\/html|application\/xhtml|text\/plain/i.test(ctype)) {
+      return { originalUrl: rawUrl, normalizedUrl, ok: false, error: "unsupported content-type" };
+    }
+    // 読み込む量の上限（約500KB）
+    const reader = res.body.getReader();
+    const chunks = []; let total = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.length;
+      if (total > 500_000) { reader.cancel(); break; }
+      chunks.push(value);
+    }
+    const html = new TextDecoder().decode(Buffer.concat(chunks.map((c) => Buffer.from(c))));
     const text = html
       .replace(/<script[\s\S]*?<\/script>/gi, "")
       .replace(/<style[\s\S]*?<\/style>/gi, "")
@@ -104,23 +154,40 @@ async function fetchUrlContent(rawUrl) {
 
 export async function POST(request) {
   console.log("Gemini request received");
-  console.log("Has API key:", Boolean(process.env.GEMINI_API_KEY));
+
+  // ── 2026-10 保守点検：入口の防御 ─────────────────────
+  if (!originAllowed(request)) {
+    console.warn("Gemini blocked | reason:origin |", request.headers.get("origin"));
+    return reject(403, "forbidden");
+  }
+  if (rateLimited(request, { key: "gemini-min", limit: 6, windowMs: 60_000 }) ||
+      rateLimited(request, { key: "gemini-hour", limit: 40, windowMs: 3_600_000 })) {
+    console.warn("Gemini blocked | reason:rate");
+    return reject(429, "too many requests");
+  }
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     console.error("GEMINI_API_KEY is missing");
-    return Response.json({ error: "GEMINI_API_KEY is not set" }, { status: 500 });
+    return Response.json({ error: "server not configured" }, { status: 500 });
   }
 
-  let body;
-  try {
-    body = await request.json();
-  } catch (err) {
-    console.error("Failed to parse request body:", err?.message);
-    return Response.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
+  const parsed = await readJsonLimited(request, MAX_BODY_BYTES);
+  if (parsed.error === "too_large") return reject(413, "request too large");
+  if (parsed.error) return reject(400, "Invalid JSON body");
+  const body = parsed.body || {};
 
   const { prompt, urls = [], images = [], mode = "customer" } = body;
+  if (typeof prompt !== "string" || prompt.length > MAX_PROMPT_CHARS) return reject(400, "invalid prompt");
+  if (!ALLOWED_MODES.has(mode)) return reject(400, "invalid mode");
+  if (!Array.isArray(urls) || urls.length > MAX_URLS) return reject(400, "too many urls");
+  if (!Array.isArray(images) || images.length > MAX_IMAGES) return reject(400, "too many images");
+  for (const img of images) {
+    if (!img || typeof img.data !== "string" || img.data.length > MAX_IMAGE_B64_CHARS ||
+        !ALLOWED_IMAGE_TYPES.has(img.mimeType)) {
+      return reject(400, "invalid image");
+    }
+  }
   const ts = new Date().toISOString();
   console.log(`[${ts}] Gemini request | mode:${mode} | images:${Array.isArray(images) ? images.length : 0} | urls:${Array.isArray(urls) ? urls.length : 0}`);
   console.log("Prompt exists:", Boolean(prompt));
@@ -250,13 +317,15 @@ export async function POST(request) {
     },
   };
 
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  // APIキーはURLではなくヘッダーで渡す（URLはログ等に残りやすいため）
+  const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
   console.log("Calling Gemini | parts:", parts.length, "| hasImages:", validImages.length > 0);
-  const geminiResult = await fetchGemini(apiUrl, requestBody, validImages.length > 0);
+  const geminiResult = await fetchGemini(apiUrl, apiKey, requestBody, validImages.length > 0);
   if (!geminiResult.ok) {
     console.error(`[${new Date().toISOString()}] Gemini error | mode:${mode} | ${geminiResult.error}`);
-    return Response.json({ error: geminiResult.error }, { status: geminiResult.httpStatus });
+    // 詳細はログにだけ残し、お客様側には一般的なメッセージを返す
+    return Response.json({ error: "AI service error" }, { status: geminiResult.httpStatus === 429 ? 429 : 502 });
   }
 
   const data = await geminiResult.res.json();

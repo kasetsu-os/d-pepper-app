@@ -1,3 +1,5 @@
+import { originAllowed, rateLimited, readJsonLimited, reject } from "./_guard.js";
+
 // POST to Google Forms formResponse endpoint (server-side)
 // Reuses the same form that powers the existing Da-is share flow
 const FORM_ACTION =
@@ -39,16 +41,28 @@ function buildConsultText(item, replyRequest) {
 export async function POST(request) {
   const ts = new Date().toISOString();
 
-  let body;
-  try {
-    body = await request.json();
-  } catch {
+  // ── 2026-10 保守点検：入口の防御 ─────────────────────
+  if (!originAllowed(request)) {
+    console.warn(`[${ts}] History share blocked | reason:origin`);
+    return reject(403, "forbidden");
+  }
+  if (rateLimited(request, { key: "share-min", limit: 3, windowMs: 60_000 }) ||
+      rateLimited(request, { key: "share-hour", limit: 15, windowMs: 3_600_000 })) {
+    console.warn(`[${ts}] History share blocked | reason:rate`);
+    return reject(429, "too many requests");
+  }
+
+  const parsed = await readJsonLimited(request, 100_000);
+  if (parsed.error === "too_large") return reject(413, "request too large");
+  if (parsed.error) {
     console.error(`[${ts}] History share error | message: Invalid JSON body`);
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { item, replyRequest } = body;
-  if (!item) {
+  const { item, replyRequest } = parsed.body || {};
+  if (!item || typeof item !== "object" ||
+      (item.aiResponse != null && typeof item.aiResponse !== "string") ||
+      (item.text != null && typeof item.text !== "string")) {
     console.error(`[${ts}] History share error | message: item is required`);
     return Response.json({ error: "item is required" }, { status: 400 });
   }
@@ -109,10 +123,7 @@ export async function POST(request) {
     console.error(
       `[${errTs}] History share error | message: ${err?.message ?? "Network error"}`
     );
-    return Response.json(
-      { error: err?.message ?? "Network error" },
-      { status: 500 }
-    );
+    return Response.json({ error: "share failed" }, { status: 500 });
   }
 }
 
