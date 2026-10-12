@@ -11,20 +11,30 @@ export function clientIp(request) {
   return fwd.split(",")[0].trim() || request.headers.get("x-real-ip") || "unknown";
 }
 
+// 記録は { windowMs, hits } で持ち、掃除は「その記録自身の期間」で判定する
+// （1分制限の掃除で1時間制限の記録まで消さないため）
 export function rateLimited(request, { key, limit, windowMs }) {
-  const id = `${key}:${clientIp(request)}`;
   const now = Date.now();
-  const hits = (buckets.get(id) || []).filter((t) => now - t < windowMs);
+  const id = `${key}:${clientIp(request)}`;
+  const entry = buckets.get(id);
+  const hits = (entry?.hits || []).filter((t) => now - t < windowMs);
   if (hits.length >= limit) {
-    buckets.set(id, hits);
+    buckets.set(id, { windowMs, hits });
     return true;
   }
   hits.push(now);
-  buckets.set(id, hits);
+  buckets.set(id, { windowMs, hits });
   if (buckets.size > 5000) {
-    for (const [k, v] of buckets) if (!v.some((t) => now - t < windowMs)) buckets.delete(k);
+    for (const [k, v] of buckets) {
+      if (!v.hits.some((t) => now - t < v.windowMs)) buckets.delete(k);
+    }
   }
   return false;
+}
+
+// テスト用：記録を初期化
+export function _resetRateLimits() {
+  buckets.clear();
 }
 
 // 自分のサイト以外のページから呼ばれた場合は断る。
@@ -58,18 +68,23 @@ export async function readJsonLimited(request, maxBytes) {
   const len = Number(request.headers.get("content-length") || 0);
   if (len > maxBytes) return { error: "too_large" };
   if (!request.body) return { error: "invalid_json" };
-  const reader = request.body.getReader();
   const chunks = [];
   let total = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    total += value.byteLength;
-    if (total > maxBytes) {
-      await reader.cancel().catch(() => {});
-      return { error: "too_large" };
+  try {
+    const reader = request.body.getReader();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        await reader.cancel().catch(() => {});
+        return { error: "too_large" };
+      }
+      chunks.push(value);
     }
-    chunks.push(value);
+  } catch {
+    // 通信が途中で切れた・本文が既に読まれている等。例外を外へ出さず、エラー応答にする
+    return { error: "read_failed" };
   }
   const buf = new Uint8Array(total);
   let off = 0;

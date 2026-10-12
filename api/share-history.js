@@ -6,6 +6,19 @@ import { SHARE_MAX_BODY_BYTES } from "../src/lib/limits.js";
 const FORM_ACTION =
   "https://docs.google.com/forms/d/e/1FAIpQLSevLDDVaXd3S0eMHNqL7GTomvm3TY8SwUFQO62WeOgRJd8nJQ/formResponse";
 
+// 履歴の形式チェック（日付の変換や文字列処理より前に行う）
+const OPTIONAL_STRING_FIELDS = ["text", "aiResponse", "category", "group", "entryTitle", "nextAction"];
+function isValidItem(item) {
+  if (!item || typeof item !== "object" || Array.isArray(item)) return false;
+  if (typeof item.createdAt !== "string" || Number.isNaN(new Date(item.createdAt).getTime())) return false;
+  if (!(typeof item.id === "number" && Number.isFinite(item.id)) && !(typeof item.id === "string" && item.id.length <= 64)) return false;
+  for (const f of OPTIONAL_STRING_FIELDS) {
+    if (item[f] != null && typeof item[f] !== "string") return false;
+  }
+  if (item.favorite != null && typeof item.favorite !== "boolean") return false;
+  return true;
+}
+
 function buildConsultText(item, replyRequest) {
   const dateStr = new Intl.DateTimeFormat("ja-JP", {
     year: "numeric", month: "2-digit", day: "2-digit",
@@ -60,12 +73,10 @@ export async function POST(request) {
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { item, replyRequest } = parsed.body || {};
-  if (!item || typeof item !== "object" ||
-      (item.aiResponse != null && typeof item.aiResponse !== "string") ||
-      (item.text != null && typeof item.text !== "string")) {
-    console.error(`[${ts}] History share error | message: item is required`);
-    return Response.json({ error: "item is required" }, { status: 400 });
+  const { item, replyRequest } = (parsed.body && typeof parsed.body === "object") ? parsed.body : {};
+  if (!isValidItem(item)) {
+    console.error(`[${ts}] History share error | message: invalid item`);
+    return Response.json({ error: "invalid item" }, { status: 400 });
   }
 
   // 未指定・空欄・undefined → 返信希望 として扱う

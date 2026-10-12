@@ -196,6 +196,84 @@ const streamReq = (text, { chunk = 16_384, origin = "https://d-pepper-app.vercel
   check("URL 5件の相談も、3件に揃えて送られ返答が出る", ok && sent.urls.length === 3);
 }
 
+// ── 本文の読み込み失敗（通信切断など）でも例外を外へ出さない ──
+{
+  const G = await import(path.join(root, "api/_guard.js"));
+  const brokenReq = (origin = "https://d-pepper-app.vercel.app") => {
+    let sent = false;
+    const stream = new ReadableStream({
+      pull(ctrl) {
+        if (!sent) { sent = true; ctrl.enqueue(new TextEncoder().encode('{"prompt":"途中')); return; }
+        ctrl.error(new Error("connection reset"));
+      },
+    });
+    return new Request("https://x/api", { method: "POST", body: stream, duplex: "half",
+      headers: { "content-type": "application/json", origin, "x-forwarded-for": `10.7.${++ipCounter % 250}.1` } });
+  };
+  let r1, threw = false;
+  try { r1 = await G.readJsonLimited(brokenReq(), 1000); } catch { threw = true; }
+  check("共通処理：読み込み失敗は read_failed を返す（例外にならない）", !threw && r1?.error === "read_failed");
+  for (const [name, fn] of [["AI相談", g.POST], ["履歴共有", sh.POST]]) {
+    let st = null; threw = false;
+    try { st = (await fn(brokenReq())).status; } catch { threw = true; }
+    check(`${name}：読み込み失敗は400で応答（例外にならない）`, !threw && st === 400, `status ${st}`);
+  }
+  // 本文が既に読まれている場合も同様
+  const used = req({ prompt: P }); await used.text();
+  threw = false; let r2;
+  try { r2 = await G.readJsonLimited(used, 1000); } catch { threw = true; }
+  check("共通処理：読み込み済みの本文でも例外にならない", !threw && !!r2?.error);
+}
+
+// ── 履歴の形式チェック（日付変換より前に拒否）──
+{
+  const okItem = { id: 1712345678901, createdAt: new Date().toISOString(), category: "カラー相談", text: "t", aiResponse: "a" };
+  const bad = [
+    ["空の履歴", {}],
+    ["配列の履歴", []],
+    ["日付が不正", { ...okItem, createdAt: "not-a-date" }],
+    ["日付なし", { ...okItem, createdAt: undefined }],
+    ["日付が数値", { ...okItem, createdAt: 12345 }],
+    ["IDがオブジェクト", { ...okItem, id: { x: 1 } }],
+    ["お気に入りが文字列", { ...okItem, favorite: "yes" }],
+    ["カテゴリが配列", { ...okItem, category: ["a"] }],
+  ];
+  for (const [name, item] of bad) {
+    let st = null, threw = false;
+    try { st = (await sh.POST(req({ item }))).status; } catch { threw = true; }
+    check(`履歴共有：${name} は400（例外にならない）`, !threw && st === 400, threw ? "例外" : `status ${st}`);
+  }
+  let st = null, threw = false;
+  try { st = (await sh.POST(req({ item: [okItem] }))).status; } catch { threw = true; }
+  check("履歴共有：本文の item が配列は400", !threw && st === 400);
+  try { st = (await sh.POST(new Request("https://x/api", { method: "POST", body: "[1,2]", headers: { "content-type": "application/json", origin: "https://d-pepper-app.vercel.app", "x-forwarded-for": "10.6.6.6" } }))).status; } catch { st = "例外"; }
+  check("履歴共有：本文全体が配列は400", st === 400, `status ${st}`);
+  await expectStatus("履歴共有：通常の履歴（文字列ID・お気に入りあり）は通る", sh.POST(req({ item: { ...okItem, id: "h-1", favorite: true } })), 200);
+}
+
+// ── 連続送信の記録の掃除で、1時間制限の記録を早く消さない ──
+{
+  const G = await import(path.join(root, "api/_guard.js"));
+  G._resetRateLimits?.();
+  const ipReq = (ip) => new Request("https://x/", { headers: { "x-forwarded-for": ip } });
+  const hour = { key: "t-hour", limit: 40, windowMs: 3_600_000 };
+  const minute = { key: "t-min", limit: 6, windowMs: 60_000 };
+  // 時計（Date.now）を差し替えて時間経過を再現する
+  const realNow = Date.now;
+  let t = 1_000_000;
+  Date.now = () => t;
+  for (let i = 0; i < 40; i++) { G.rateLimited(ipReq("7.7.7.7"), hour); t += 1; }
+  check("1時間制限：41回目は制限", G.rateLimited(ipReq("7.7.7.7"), hour) === true);
+  t += 61_000; // 61秒進める
+  for (let i = 0; i < 5_100; i++) G.rateLimited(ipReq(`20.${i >> 8}.${i & 255}.1`), minute); // 掃除を発生させる
+  check("掃除の後も、1時間以内なら同じ利用元は制限されたまま", G.rateLimited(ipReq("7.7.7.7"), hour) === true);
+  t += 3_700_000; // 1時間以上進める
+  for (let i = 0; i < 5_100; i++) G.rateLimited(ipReq(`21.${i >> 8}.${i & 255}.1`), minute);
+  check("1時間を過ぎれば同じ利用元は再び許可", G.rateLimited(ipReq("7.7.7.7"), hour) === false);
+  Date.now = realNow;
+  G._resetRateLimits?.();
+}
+
 console.log = realLog;
 console.log(results.join("\n"));
 const failed = results.filter((x) => x.startsWith("FAIL")).length;
