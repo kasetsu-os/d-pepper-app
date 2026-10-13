@@ -114,6 +114,7 @@ function onFormSubmit(e) {
     const replyFromForm = getValue(namedValues, [
       '返信', '返信希望', '返信を希望しますか', 'お返事',
       '返信の希望', 'reply', 'reply_request',
+      '返信を希望しますか？', '返信を希望しますか?',
     ]);
 
     // 3) 両方を合わせて判定。空欄なら「返信希望」にフォールバック

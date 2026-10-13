@@ -99,6 +99,15 @@ const historyText = (lines) => ["【Dペッパー履歴共有】", ...lines].joi
   check("システムからリンクを付け加えない（HTML本文に <a> がない）", !/<a[\s>]/i.test(opt.htmlBody || ""));
 }
 
+// ── 5) 稼働中フォームの質問名「返信を希望しますか？／?」から返信の希望を読む ──
+for (const field of ["返信を希望しますか？", "返信を希望しますか?"]) {
+  for (const [answer, expected] of [["返信不要", "【返信不要】"], ["返信希望", "【返信希望】"]]) {
+    const { sent } = runSubmit({ "ご相談内容": ["フォームから直接の相談"], [field]: [answer] });
+    const subject = sent[0]?.[0]?.subject || "";
+    check(`質問名「${field}」の「${answer}」を読み取る`, sent.length === 1 && subject.endsWith(expected), subject);
+  }
+}
+
 console.log(results.join("\n"));
 const failed = results.filter((x) => x.startsWith("FAIL")).length;
 console.log(`\n合計 ${results.length} 項目 / 失敗 ${failed}`);
