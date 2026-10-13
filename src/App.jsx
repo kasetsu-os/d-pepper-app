@@ -476,6 +476,7 @@ function App() {
   const aiRequestIdRef = useRef(0);
   const lastEncodedImagesRef = useRef([]);
   const lastConsultationIdRef = useRef(null);
+  const historyShareInFlightRef = useRef(false);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(consultations));
@@ -835,6 +836,9 @@ function App() {
   }
 
   async function handleHistoryShare(item, replyRequest) {
+    // 送信中の二重送信を防ぐ（フォームには重複を取り消す仕組みがないため）
+    if (historyShareInFlightRef.current) return;
+    historyShareInFlightRef.current = true;
     const reply = replyRequest === "返信不要" ? "返信不要" : "返信希望";
     setHistoryShareStatus("sending");
     setHistoryShareConfirm(false);
@@ -854,6 +858,8 @@ function App() {
     } catch (err) {
       console.error("[History share] fetch error:", err);
       setHistoryShareStatus("error");
+    } finally {
+      historyShareInFlightRef.current = false;
     }
   }
 

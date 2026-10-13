@@ -98,6 +98,7 @@ const browser = await pw.chromium.launch();
 const context = await browser.newContext();
 const external = [];
 const apiCalls = [];
+let shareFailNext = false;
 await context.route("**/*", async (route) => {
   const req = route.request();
   const u = new URL(req.url());
@@ -108,6 +109,11 @@ await context.route("**/*", async (route) => {
   }
   if (u.origin === origin && u.pathname === "/api/share-history") {
     apiCalls.push({ path: u.pathname, body: req.postData() });
+    if (shareFailNext) {
+      // フォーム送信に失敗した場合のサーバー応答を再現（少し遅らせて二重押しの余地を作る）
+      await new Promise((r) => setTimeout(r, 300));
+      return route.fulfill({ status: 502, contentType: "application/json", body: JSON.stringify({ error: "Form submit failed: 400" }) });
+    }
     return route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
   }
   if (u.origin === origin) return route.continue();
@@ -210,6 +216,22 @@ const shareReq = apiCalls.find((c) => c.path === "/api/share-history");
 const sentItem = shareReq ? JSON.parse(shareReq.body).item : null;
 check("履歴共有は自サイトの /api/share-history にだけ送る（差し替え済み）", !!shareReq);
 check("履歴共有で送る内容は保存されている履歴そのまま", JSON.stringify(sentItem) === JSON.stringify(seeded[0]));
+
+// 履歴共有が失敗した場合：成功と表示せず、二重押しでも送信は1回
+{
+  shareFailNext = true;
+  const before = apiCalls.filter((c) => c.path === "/api/share-history").length;
+  await page.locator(".history-detail-share-again").click();
+  await page.locator(".history-detail-share-btn").click();
+  await page.locator(".history-detail-share-go").evaluate((btn) => { btn.click(); btn.click(); });
+  await page.getByText("共有に失敗しました", { exact: false }).waitFor({ timeout: 5000 }).catch(() => {});
+  const failShown = await page.getByText("共有に失敗しました", { exact: false }).count();
+  const okShown = await page.getByText("相談内容をDa-isに共有しました", { exact: false }).count();
+  const sentCount = apiCalls.filter((c) => c.path === "/api/share-history").length - before;
+  check("履歴共有の失敗時は「失敗しました」と表示し、成功とは表示しない", failShown > 0 && okShown === 0);
+  check("「共有する」を素早く2回押しても、送信は1回だけ", sentCount === 1, `送信 ${sentCount} 回`);
+  shareFailNext = false;
+}
 
 // ── 5) 利用者のデータを勝手に消さない・書き換えない ──
 const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("d-pepper-consultations") || "[]"));

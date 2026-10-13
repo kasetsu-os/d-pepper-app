@@ -1,10 +1,9 @@
 import { originAllowed, rateLimited, readJsonLimited, reject } from "./_guard.js";
 import { SHARE_MAX_BODY_BYTES } from "../src/lib/limits.js";
+import { FORM_ACTION, buildFormParams, classifyFormResponse } from "./_share-form.js";
 
 // POST to Google Forms formResponse endpoint (server-side)
 // Reuses the same form that powers the existing Da-is share flow
-const FORM_ACTION =
-  "https://docs.google.com/forms/d/e/1FAIpQLSevLDDVaXd3S0eMHNqL7GTomvm3TY8SwUFQO62WeOgRJd8nJQ/formResponse";
 
 // 履歴の形式チェック（日付の変換や文字列処理より前に行う）
 const OPTIONAL_STRING_FIELDS = ["text", "aiResponse", "category", "group", "entryTitle", "nextAction"];
@@ -91,14 +90,7 @@ export async function POST(request) {
     ? item.aiResponse
     : "この相談は詳細保存前の履歴のため、Dペッパーの返答本文は残っていません。";
 
-  const params = new URLSearchParams({
-    "entry.1825538084": consultText,
-    "entry.948403332": aiText.slice(0, 3500),
-    "entry.1738990388": "履歴共有",
-    fvv: "1",
-    pageHistory: "0",
-    fbzx: Date.now().toString(),
-  });
+  const params = buildFormParams({ consultText, aiText, reply });
 
   try {
     const res = await fetch(FORM_ACTION, {
@@ -116,15 +108,14 @@ export async function POST(request) {
     });
 
     const successTs = new Date().toISOString();
-    // Google Forms returns 302 redirect to confirmation page on success
-    if (res.status === 302 || res.status === 200 || res.ok) {
-      console.log(`[${successTs}] History share ok`);
+    const result = classifyFormResponse(res);
+    if (result.ok) {
+      console.log(`[${successTs}] History share ok | status: ${res.status}`);
       return Response.json({ ok: true });
     }
 
-    const errBody = await res.text().catch(() => "");
     console.error(
-      `[${successTs}] History share error | status: ${res.status} | body: ${errBody.slice(0, 200)}`
+      `[${successTs}] History share error | status: ${res.status} | reason: ${result.reason}`
     );
     return Response.json(
       { error: `Form submit failed: ${res.status}` },
