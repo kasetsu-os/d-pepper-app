@@ -1198,6 +1198,13 @@ body {
 .history-detail-reply-btns { display: flex; gap: 0; border: 1px solid rgba(184,149,90,0.36); border-radius: 20px; overflow: hidden; }
 .history-detail-reply-btn { padding: 5px 14px; font-size: 12px; background: none; border: none; cursor: pointer; color: var(--text-light); transition: all 0.18s; }
 .history-detail-reply-btn--active { background: var(--gold); color: #fff; font-weight: 500; }
+.history-detail-reply-email { margin: 8px 0 4px; display: flex; flex-direction: column; gap: 6px; }
+.history-detail-reply-email-label { font-size: 12px; color: var(--text-mid); }
+.history-detail-reply-email-required { color: var(--gold); margin-left: 2px; }
+.history-detail-reply-email-input { width: 100%; }
+.history-detail-reply-email-input[aria-invalid="true"] { border-color: rgba(160,40,40,0.55); }
+.history-detail-reply-email-note { font-size: 11px; color: var(--text-light); line-height: 1.6; }
+.history-detail-share-go:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* ─── 削除確認ダイアログ ─── */
 .history-confirm-overlay { position: fixed; inset: 0; background: rgba(40,25,10,0.50); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 0.18s ease; }

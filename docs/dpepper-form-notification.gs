@@ -38,18 +38,36 @@ function getValue(namedValues, candidates) {
 
 
 /**
- * 改行を HTML <br> に変換する。
+ * 外から来た値を、HTML の中で「文字」として扱えるようにする。
+ * フォームは誰でも送信できるため、フォーム由来の値はすべてこれを通してから HTML に入れる。
+ * @param {string} text
+ * @returns {string}
+ */
+function escapeHtml(text) {
+  return String(text == null ? '' : text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+
+/**
+ * 改行を HTML <br> に変換する（中身はエスケープ済みにする）。
  * @param {string} text
  * @returns {string}
  */
 function nl2br(text) {
   if (!text) return '';
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\n/g, '<br>');
+  return escapeHtml(text).replace(/\n/g, '<br>');
 }
+
+
+// メール冒頭に入れる注意書き（店舗向け）。お客様の入力と、システムの案内を混同しないため
+const INPUT_NOTICE = '以下の相談内容・返答・返信先などは、お客様が入力した内容（共有フォームに送信された内容）です。'
+  + '文中のURL・メールアドレス・電話番号は、Dペッパーやシステムからの案内ではありません。'
+  + 'このメールからログイン・パスワード入力・支払いを求めることはありません。';
 
 
 /**
@@ -86,6 +104,7 @@ function onFormSubmit(e) {
     // ※ 空欄・未入力・undefined はすべて「返信希望」として扱う（返信不要は明示的な選択のみ）
 
     // 1) まず consultText の構造から抽出（/api/share-history が埋め込む形式）
+    const isHistoryShare = consultText.startsWith('【Dペッパー履歴共有】');
     let replyFromText = '';
     if (isHistoryShare) {
       replyFromText = extractLine(consultText, '返信希望：');
@@ -95,6 +114,7 @@ function onFormSubmit(e) {
     const replyFromForm = getValue(namedValues, [
       '返信', '返信希望', '返信を希望しますか', 'お返事',
       '返信の希望', 'reply', 'reply_request',
+      '返信を希望しますか？', '返信を希望しますか?',
     ]);
 
     // 3) 両方を合わせて判定。空欄なら「返信希望」にフォールバック
@@ -110,6 +130,7 @@ function onFormSubmit(e) {
     const customerEmail = getValue(namedValues, [
       'メールアドレス', 'email', 'メール', 'Email',
       'お客様メールアドレス', '返信先メールアドレス', '連絡先メールアドレス',
+      '返信希望の場合のみ入力してください。', '返信希望の場合のみ入力してください',
     ]);
 
     // ── consultText の構造から各フィールドを抽出 ─────────────
@@ -126,7 +147,7 @@ function onFormSubmit(e) {
     //   ...
     //   ＝＝次の案内＝＝（省略あり）
     //   ...
-    const isHistoryShare = consultText.startsWith('【Dペッパー履歴共有】');
+    // （isHistoryShare は返信希望の判定より前で宣言済み）
 
     function extractLine(text, prefix) {
       const line = text.split('\n').find(l => l.startsWith(prefix));
@@ -166,6 +187,8 @@ function onFormSubmit(e) {
       `送信日時：${submittedAt}`,
       consultDate ? `相談日時：${consultDate}` : '',
       '',
+      `※${INPUT_NOTICE}`,
+      '',
       replyLine,
       customerEmailLine,
       '',
@@ -194,14 +217,17 @@ function onFormSubmit(e) {
     const htmlLines = [
       '<div style="font-family:sans-serif;font-size:14px;line-height:1.8;color:#333;max-width:640px">',
       `<h2 style="font-size:16px;font-weight:bold;border-bottom:2px solid #b8955a;padding-bottom:6px;margin-bottom:16px">【Dペッパー履歴共有】${replyBadgeHtml}</h2>`,
-      `<p style="font-size:12px;color:#888;margin-bottom:16px">送信日時：${submittedAt}</p>`,
+      `<p style="font-size:12px;color:#888;margin-bottom:16px">送信日時：${escapeHtml(submittedAt)}</p>`,
+      `<p style="font-size:12px;color:#6b4a1b;background:#fff8e6;border:1px solid #e8dcc8;border-radius:6px;padding:8px 12px;margin-bottom:16px">${escapeHtml(INPUT_NOTICE)}</p>`,
 
       '<table style="border-collapse:collapse;width:100%;margin-bottom:20px">',
       makeTr('返信希望', replyField || '(記録なし)'),
-      wantsReply ? makeTr('返信先メール', customerEmail || '<span style="color:#c0392b">記録なし・フォームで確認してください</span>') : '',
-      makeTr('相談日時',  consultDate  || '&mdash;'),
-      makeTr('カテゴリ',  category     || '&mdash;'),
-      makeTr('分類',      group        || '&mdash;'),
+      wantsReply ? (customerEmail
+        ? makeTr('返信先メール', customerEmail)
+        : makeTr('返信先メール', '記録なし・フォームで確認してください', '#c0392b')) : '',
+      makeTr('相談日時',  consultDate  || '—'),
+      makeTr('カテゴリ',  category     || '—'),
+      makeTr('分類',      group        || '—'),
       entryTitle  ? makeTr('来店種別', entryTitle) : '',
       makeTr('お気に入り', isFav ? '⭐️ あり' : 'なし'),
       historyId   ? makeTr('履歴ID',   historyId) : '',
@@ -216,7 +242,7 @@ function onFormSubmit(e) {
       nextAction ? '<h3 style="font-size:14px;font-weight:bold;margin-bottom:6px;color:#6b4a1b">次の案内</h3>' : '',
       nextAction ? `<div style="background:#faf7f3;border:1px solid #e8dcc8;border-radius:6px;padding:12px 14px;margin-bottom:20px;white-space:pre-wrap">${nl2br(nextAction)}</div>` : '',
 
-      attachInfo ? `<p style="font-size:12px;color:#888">添付情報：${attachInfo}</p>` : '',
+      attachInfo ? `<p style="font-size:12px;color:#888">添付情報：${escapeHtml(attachInfo)}</p>` : '',
       '</div>',
     ].filter(l => l !== '').join('\n');
 
@@ -245,14 +271,17 @@ function onFormSubmit(e) {
 /**
  * HTMLテーブル行を生成するヘルパー。
  * @param {string} label
- * @param {string} value
+ * @param {string} value  外から来る値（エスケープして入れる）
+ * @param {string} [valueColor] 固定の文字色（入力値を渡さないこと）
  * @returns {string}
  */
-function makeTr(label, value) {
+function makeTr(label, value, valueColor) {
+  // value は外から来る値なので必ずエスケープする。valueColor はスクリプト内の固定値だけを渡す
+  const color = valueColor ? `color:${valueColor};` : '';
   return [
     '<tr>',
-    `<td style="padding:5px 10px;font-weight:bold;color:#6b4a1b;white-space:nowrap;vertical-align:top;border-bottom:1px solid #e8dcc8;font-size:13px">${label}</td>`,
-    `<td style="padding:5px 10px;border-bottom:1px solid #e8dcc8;font-size:13px">${value}</td>`,
+    `<td style="padding:5px 10px;font-weight:bold;color:#6b4a1b;white-space:nowrap;vertical-align:top;border-bottom:1px solid #e8dcc8;font-size:13px">${escapeHtml(label)}</td>`,
+    `<td style="padding:5px 10px;border-bottom:1px solid #e8dcc8;font-size:13px;${color}">${escapeHtml(value)}</td>`,
     '</tr>',
   ].join('');
 }

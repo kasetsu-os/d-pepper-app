@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 import { buildDpepperPrompt } from "./lib/dpepperPrompt";
+import { encodeWithinBudget, PAYLOAD_TOO_LARGE } from "./lib/imageBudget";
 import { buildRecruitPrompt, classifyRecruit } from "./lib/recruitEngine";
 import { askGemini } from "./lib/geminiClient";
+import { isValidEmail, normalizeEmail, MAX_EMAIL_LENGTH } from "./lib/contact";
 
 function withDaIs(text) {
   if (!text || !text.includes("Da-is")) return text;
@@ -302,14 +304,13 @@ function buildShareUrl(result, aiResponse) {
   }
 }
 
-function resizeAndEncodeImage(imgObj) {
+function resizeAndEncodeImage(imgObj, MAX = 1280, quality = 0.75) {
   return new Promise((resolve) => {
     const { file } = imgObj;
     if (!file) { resolve(null); return; }
     const img = new window.Image();
     const objectUrl = URL.createObjectURL(file);
     img.onload = () => {
-      const MAX = 1600;
       let { width, height } = img;
       if (width > MAX || height > MAX) {
         if (width >= height) { height = Math.round(height * MAX / width); width = MAX; }
@@ -322,13 +323,14 @@ function resizeAndEncodeImage(imgObj) {
       URL.revokeObjectURL(objectUrl);
       canvas.toBlob(
         (blob) => {
+          if (!blob) { resolve(null); return; }
           const reader = new FileReader();
           reader.onload = () => resolve({ name: file.name, mimeType: "image/jpeg", data: reader.result.split(",")[1] });
           reader.onerror = () => resolve(null);
           reader.readAsDataURL(blob);
         },
         "image/jpeg",
-        0.8
+        quality
       );
     };
     img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(null); };
@@ -468,6 +470,8 @@ function App() {
   const [historyShareConfirm, setHistoryShareConfirm] = useState(false);
   const [historyShareStatus, setHistoryShareStatus] = useState(null); // null | "sending" | "sent" | "error"
   const [historyShareReply, setHistoryShareReply] = useState("返信希望"); // "返信希望" | "返信不要"
+  const [historyShareEmail, setHistoryShareEmail] = useState(""); // 返信希望のときだけ使う（端末には保存しない）
+  const [historyShareEmailTouched, setHistoryShareEmailTouched] = useState(false);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
   const resultCardRef = useRef(null);
@@ -475,6 +479,7 @@ function App() {
   const aiRequestIdRef = useRef(0);
   const lastEncodedImagesRef = useRef([]);
   const lastConsultationIdRef = useRef(null);
+  const historyShareInFlightRef = useRef(false);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(consultations));
@@ -621,7 +626,8 @@ function App() {
 
     // 画像エンコードを状態クリア前にスナップショットして非同期開始
     const imagesToEncode = [...attachedImages];
-    const encodedImagesPromise = Promise.all(imagesToEncode.map((img) => resizeAndEncodeImage(img)));
+    // 実際の容量を測り、上限を超える場合は段階的に再圧縮（超え続ける場合は送信しない）
+    const encodedImagesPromise = encodeWithinBudget(imagesToEncode, resizeAndEncodeImage);
 
     const newConsultId = Date.now();
     lastConsultationIdRef.current = newConsultId;
@@ -657,7 +663,9 @@ function App() {
       setAiLoading(true);
       setLoadingWithImages(imagesToEncode.length > 0);
       const requestId = ++aiRequestIdRef.current;
-      const encodedImages = (await encodedImagesPromise).filter(Boolean);
+      const encoded = await encodedImagesPromise;
+      const encodedImages = encoded.images;
+      console.log("[DPEPPER FRONT] image budget | step:", encoded.step, "| chars:", encoded.totalChars, "| tooLarge:", encoded.tooLarge);
       lastEncodedImagesRef.current = encodedImages;
       console.log("[DPEPPER FRONT] uploadedImages.length:", imagesToEncode.length);
       console.log("[DPEPPER FRONT] encodedImages.length:", encodedImages.length);
@@ -668,6 +676,11 @@ function App() {
       console.log("[DPEPPER FRONT] group:", result.group);
       console.log("[DPEPPER FRONT] text(50):", text.slice(0, 50));
       try {
+        if (encoded.tooLarge) {
+          const e = new Error(PAYLOAD_TOO_LARGE);
+          e.code = PAYLOAD_TOO_LARGE;
+          throw e;
+        }
         const prompt = isRecruit
           ? buildRecruitPrompt({
               text,
@@ -714,7 +727,9 @@ function App() {
       } catch (err) {
         if (requestId === aiRequestIdRef.current) {
           console.error("Gemini error:", err);
-          if (isRecruit) {
+          if (err?.code === PAYLOAD_TOO_LARGE) {
+            setAiError(PAYLOAD_TOO_LARGE);
+          } else if (isRecruit) {
             setAiError(err.message ?? "応答を取得できませんでした。");
           } else if (savedUrls.length > 0 || encodedImages.length > 0) {
             const hasUrl = savedUrls.length > 0;
@@ -794,7 +809,7 @@ function App() {
     } catch (err) {
       if (requestId === aiRequestIdRef.current) {
         console.error("Gemini retry error:", err);
-        setAiError(err.message ?? "応答を取得できませんでした。");
+        setAiError(err?.code === PAYLOAD_TOO_LARGE ? PAYLOAD_TOO_LARGE : (err.message ?? "応答を取得できませんでした。"));
       }
     } finally {
       if (requestId === aiRequestIdRef.current) setAiLoading(false);
@@ -821,17 +836,30 @@ function App() {
     setHistoryShareConfirm(false);
     setHistoryShareStatus(null);
     setHistoryShareReply("返信希望");
+    setHistoryShareEmail("");
+    setHistoryShareEmailTouched(false);
   }
 
-  async function handleHistoryShare(item, replyRequest) {
+  async function handleHistoryShare(item, replyRequest, replyEmail) {
     const reply = replyRequest === "返信不要" ? "返信不要" : "返信希望";
+    // 返信希望は返信先メールアドレスが必須（未入力・不正な形式では送らない）
+    if (reply === "返信希望" && !isValidEmail(replyEmail)) {
+      setHistoryShareEmailTouched(true);
+      return;
+    }
+    // 送信中の二重送信を防ぐ（フォームには重複を取り消す仕組みがないため）
+    if (historyShareInFlightRef.current) return;
+    historyShareInFlightRef.current = true;
     setHistoryShareStatus("sending");
     setHistoryShareConfirm(false);
     try {
       const res = await fetch("/api/share-history", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ item, replyRequest: reply }),
+        // 返信先は返信希望のときだけ送る
+        body: JSON.stringify(reply === "返信希望"
+          ? { item, replyRequest: reply, replyEmail: normalizeEmail(replyEmail) }
+          : { item, replyRequest: reply }),
       });
       if (res.ok) {
         setHistoryShareStatus("sent");
@@ -843,6 +871,8 @@ function App() {
     } catch (err) {
       console.error("[History share] fetch error:", err);
       setHistoryShareStatus("error");
+    } finally {
+      historyShareInFlightRef.current = false;
     }
   }
 
@@ -1201,9 +1231,19 @@ function App() {
                         )}
                         {!aiLoading && !aiResponse && aiError && (
                           <div className="ai-error">
-                            <p>相談内容の整理中にうまく接続できませんでした。</p>
-                            <p>少し時間を置いてから、もう一度お試しください。相談内容を共有していただくと、<ruby>Da-is<rt>デイズ</rt></ruby>のお店側でも確認できます。</p>
+                            {aiError === PAYLOAD_TOO_LARGE ? (
+                              <>
+                                <p>添付された写真の容量が大きく、送信できませんでした。</p>
+                                <p>写真の枚数を減らして、もう一度ご相談ください。相談内容を共有していただくと、<ruby>Da-is<rt>デイズ</rt></ruby>のお店側でも確認できます。</p>
+                              </>
+                            ) : (
+                              <>
+                                <p>相談内容の整理中にうまく接続できませんでした。</p>
+                                <p>少し時間を置いてから、もう一度お試しください。相談内容を共有していただくと、<ruby>Da-is<rt>デイズ</rt></ruby>のお店側でも確認できます。</p>
+                              </>
+                            )}
                             <div className="ai-error-actions">
+                              {aiError !== PAYLOAD_TOO_LARGE && (
                               <button
                                 type="button"
                                 className="retry-ai-btn"
@@ -1212,6 +1252,7 @@ function App() {
                               >
                                 もう一度試す
                               </button>
+                              )}
                               <button
                                 type="button"
                                 className="retry-share-btn"
@@ -1573,6 +1614,32 @@ function App() {
                       </button>
                     </div>
                   </div>
+                  {historyShareReply === "返信希望" && (
+                    <div className="history-detail-reply-email">
+                      <label className="history-detail-reply-email-label" htmlFor="history-share-email">
+                        返信先メールアドレス<span className="history-detail-reply-email-required">（必須）</span>
+                      </label>
+                      <input
+                        id="history-share-email"
+                        type="email"
+                        inputMode="email"
+                        autoComplete="email"
+                        maxLength={MAX_EMAIL_LENGTH}
+                        className="url-input history-detail-reply-email-input"
+                        placeholder="例：name@example.com"
+                        value={historyShareEmail}
+                        onChange={(e) => setHistoryShareEmail(e.target.value)}
+                        onBlur={() => setHistoryShareEmailTouched(true)}
+                        aria-invalid={historyShareEmailTouched && !isValidEmail(historyShareEmail)}
+                        aria-describedby="history-share-email-note"
+                      />
+                      <p id="history-share-email-note" className="history-detail-reply-email-note">
+                        {historyShareEmailTouched && !isValidEmail(historyShareEmail)
+                          ? "メールアドレスの形式を確認してください。"
+                          : "Da-isからの返信に使います。返信不要の場合は入力不要です。"}
+                      </p>
+                    </div>
+                  )}
                   <div className="history-detail-share-confirm-btns">
                     <button
                       type="button"
@@ -1584,7 +1651,8 @@ function App() {
                     <button
                       type="button"
                       className="history-detail-share-go"
-                      onClick={() => handleHistoryShare(historyDetailItem, historyShareReply)}
+                      disabled={historyShareReply === "返信希望" && !isValidEmail(historyShareEmail)}
+                      onClick={() => handleHistoryShare(historyDetailItem, historyShareReply, historyShareEmail)}
                     >
                       共有する
                     </button>

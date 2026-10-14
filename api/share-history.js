@@ -1,12 +1,30 @@
+import { originAllowed, rateLimited, readJsonLimited, reject } from "./_guard.js";
+import { SHARE_MAX_BODY_BYTES } from "../src/lib/limits.js";
+import { FORM_ACTION, REPLY_FIELD, EMAIL_FIELD, buildFormParams, classifyFormResponse } from "./_share-form.js";
+import { isValidEmail, normalizeEmail } from "../src/lib/contact.js";
+
 // POST to Google Forms formResponse endpoint (server-side)
 // Reuses the same form that powers the existing Da-is share flow
-const FORM_ACTION =
-  "https://docs.google.com/forms/d/e/1FAIpQLSevLDDVaXd3S0eMHNqL7GTomvm3TY8SwUFQO62WeOgRJd8nJQ/formResponse";
+
+// 履歴の形式チェック（日付の変換や文字列処理より前に行う）
+const OPTIONAL_STRING_FIELDS = ["text", "aiResponse", "category", "group", "entryTitle", "nextAction"];
+function isValidItem(item) {
+  if (!item || typeof item !== "object" || Array.isArray(item)) return false;
+  if (typeof item.createdAt !== "string" || Number.isNaN(new Date(item.createdAt).getTime())) return false;
+  if (!(typeof item.id === "number" && Number.isFinite(item.id)) && !(typeof item.id === "string" && item.id.length <= 64)) return false;
+  for (const f of OPTIONAL_STRING_FIELDS) {
+    if (item[f] != null && typeof item[f] !== "string") return false;
+  }
+  if (item.favorite != null && typeof item.favorite !== "boolean") return false;
+  return true;
+}
 
 function buildConsultText(item, replyRequest) {
+  // サーバー（Vercel）は UTC で動くため、日本時間を明示する
   const dateStr = new Intl.DateTimeFormat("ja-JP", {
     year: "numeric", month: "2-digit", day: "2-digit",
     hour: "2-digit", minute: "2-digit",
+    timeZone: "Asia/Tokyo",
   }).format(new Date(item.createdAt));
 
   const catDisplay =
@@ -36,85 +54,104 @@ function buildConsultText(item, replyRequest) {
     .slice(0, 3500);
 }
 
-export async function POST(request) {
-  const ts = new Date().toISOString();
+// フォームの項目設定を差し替えられる形にしておく（テスト用）。本番は下の POST を使う
+export function createSharePOST({ replyField = REPLY_FIELD, emailField = EMAIL_FIELD } = {}) {
+  return async function POST(request) {
+    const ts = new Date().toISOString();
 
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    console.error(`[${ts}] History share error | message: Invalid JSON body`);
-    return Response.json({ error: "Invalid JSON" }, { status: 400 });
-  }
-
-  const { item, replyRequest } = body;
-  if (!item) {
-    console.error(`[${ts}] History share error | message: item is required`);
-    return Response.json({ error: "item is required" }, { status: 400 });
-  }
-
-  // 未指定・空欄・undefined → 返信希望 として扱う
-  const reply = replyRequest === "返信不要" ? "返信不要" : "返信希望";
-
-  console.log(
-    `[${ts}] History share started | category: ${item.category} | hasAiResponse: ${Boolean(item.aiResponse)} | reply: ${reply}`
-  );
-
-  const consultText = buildConsultText(item, reply);
-  const aiText = item.aiResponse
-    ? item.aiResponse
-    : "この相談は詳細保存前の履歴のため、Dペッパーの返答本文は残っていません。";
-
-  const params = new URLSearchParams({
-    "entry.1825538084": consultText,
-    "entry.948403332": aiText.slice(0, 3500),
-    "entry.1738990388": "履歴共有",
-    fvv: "1",
-    pageHistory: "0",
-    fbzx: Date.now().toString(),
-  });
-
-  try {
-    const res = await fetch(FORM_ACTION, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        Referer:
-          "https://docs.google.com/forms/d/e/1FAIpQLSevLDDVaXd3S0eMHNqL7GTomvm3TY8SwUFQO62WeOgRJd8nJQ/viewform",
-        Origin: "https://docs.google.com",
-      },
-      body: params.toString(),
-      redirect: "manual",
-    });
-
-    const successTs = new Date().toISOString();
-    // Google Forms returns 302 redirect to confirmation page on success
-    if (res.status === 302 || res.status === 200 || res.ok) {
-      console.log(`[${successTs}] History share ok`);
-      return Response.json({ ok: true });
+    // ── 2026-10 保守点検：入口の防御 ─────────────────────
+    if (!originAllowed(request)) {
+      console.warn(`[${ts}] History share blocked | reason:origin`);
+      return reject(403, "forbidden");
+    }
+    if (rateLimited(request, { key: "share-min", limit: 3, windowMs: 60_000 }) ||
+        rateLimited(request, { key: "share-hour", limit: 15, windowMs: 3_600_000 })) {
+      console.warn(`[${ts}] History share blocked | reason:rate`);
+      return reject(429, "too many requests");
     }
 
-    const errBody = await res.text().catch(() => "");
-    console.error(
-      `[${successTs}] History share error | status: ${res.status} | body: ${errBody.slice(0, 200)}`
+    const parsed = await readJsonLimited(request, SHARE_MAX_BODY_BYTES);
+    if (parsed.error === "too_large") return reject(413, "request too large");
+    if (parsed.error) {
+      console.error(`[${ts}] History share error | message: Invalid JSON body`);
+      return Response.json({ error: "Invalid JSON" }, { status: 400 });
+    }
+
+    const { item, replyRequest, replyEmail } = (parsed.body && typeof parsed.body === "object") ? parsed.body : {};
+    if (!isValidItem(item)) {
+      console.error(`[${ts}] History share error | message: invalid item`);
+      return Response.json({ error: "invalid item" }, { status: 400 });
+    }
+
+    // 未指定・空欄・undefined → 返信希望 として扱う
+    const reply = replyRequest === "返信不要" ? "返信不要" : "返信希望";
+
+    // 返信希望のときは返信先メールアドレスが必須（返信不要のときは受け取っても使わない）
+    // ※ メールアドレス自体はログに出さない
+    let email = "";
+    if (reply === "返信希望") {
+      if (!isValidEmail(replyEmail)) {
+        console.warn(`[${ts}] History share rejected | reason: invalid reply email`);
+        return Response.json({ error: "invalid reply email" }, { status: 400 });
+      }
+      if (!emailField) {
+        console.error(`[${ts}] History share rejected | reason: reply email field not configured`);
+        return Response.json({ error: "reply email not available" }, { status: 503 });
+      }
+      email = normalizeEmail(replyEmail);
+    }
+
+    console.log(
+      `[${ts}] History share started | category: ${item.category} | hasAiResponse: ${Boolean(item.aiResponse)} | reply: ${reply}`
     );
-    return Response.json(
-      { error: `Form submit failed: ${res.status}` },
-      { status: 502 }
-    );
-  } catch (err) {
-    const errTs = new Date().toISOString();
-    console.error(
-      `[${errTs}] History share error | message: ${err?.message ?? "Network error"}`
-    );
-    return Response.json(
-      { error: err?.message ?? "Network error" },
-      { status: 500 }
-    );
-  }
+
+    const consultText = buildConsultText(item, reply);
+    const aiText = item.aiResponse
+      ? item.aiResponse
+      : "この相談は詳細保存前の履歴のため、Dペッパーの返答本文は残っていません。";
+
+    const params = buildFormParams({ consultText, aiText, reply, replyEmail: email }, replyField, emailField);
+
+    try {
+      const res = await fetch(FORM_ACTION, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          Referer:
+            "https://docs.google.com/forms/d/e/1FAIpQLSevLDDVaXd3S0eMHNqL7GTomvm3TY8SwUFQO62WeOgRJd8nJQ/viewform",
+          Origin: "https://docs.google.com",
+        },
+        body: params.toString(),
+        redirect: "manual",
+      });
+
+      const successTs = new Date().toISOString();
+      const result = classifyFormResponse(res);
+      if (result.ok) {
+        console.log(`[${successTs}] History share ok | status: ${res.status}`);
+        return Response.json({ ok: true });
+      }
+
+      console.error(
+        `[${successTs}] History share error | status: ${res.status} | reason: ${result.reason}`
+      );
+      return Response.json(
+        { error: `Form submit failed: ${res.status}` },
+        { status: 502 }
+      );
+    } catch (err) {
+      const errTs = new Date().toISOString();
+      console.error(
+        `[${errTs}] History share error | message: ${err?.message ?? "Network error"}`
+      );
+      return Response.json({ error: "share failed" }, { status: 500 });
+    }
+  };
 }
+
+export const POST = createSharePOST();
 
 export function GET() {
   return Response.json({ ok: true, message: "share-history route alive" });
