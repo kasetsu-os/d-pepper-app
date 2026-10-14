@@ -30,8 +30,8 @@ const check = (name, ok, detail = "") => results.push(`${ok ? "PASS" : "FAIL"}  
 // 本物のフォームの項目ID（2026-10-14 確認）。REPLY_FIELD がこれと一致していることもテストする
 const FORM_REPLY_ENTRY = "entry.1518046549";
 const TEST_REPLY_FIELD = { entry: FORM_REPLY_ENTRY, choices: { 返信希望: "返信希望", 返信不要: "返信不要" } };
-// 返信先メールアドレスの質問：本物の項目IDは未確認のため、テスト専用の仮の値を使う
-const TEST_EMAIL_ENTRY = "entry.TEST_ONLY_EMAIL";
+// 返信先メールアドレスの質問の項目ID（2026-10-14 フォームの事前入力URLで確認）
+const TEST_EMAIL_ENTRY = "entry.792546235";
 const EMAIL_QUESTION = "返信希望の場合のみ入力してください。";
 const CUSTOMER_EMAIL = "customer.test@example.com";
 const mockForm = {
@@ -75,8 +75,8 @@ globalThis.fetch = async (url, opt = {}) => {
 };
 
 let ip = 0;
-// 返信先の項目IDを仮の値で設定した履歴共有API（本物の設定は EMAIL_FIELD が埋まるまで返信希望を受け付けない）
-const shT = { POST: sh.createSharePOST({ emailField: TEST_EMAIL_ENTRY }) };
+// 本番と同じ設定（REPLY_FIELD・EMAIL_FIELD）の履歴共有API
+const shT = sh;
 const shareReq = (replyRequest, createdAt = "2026-10-12T01:00:00.000Z", replyEmail) => new Request("https://x/api/share-history", {
   method: "POST",
   headers: { "content-type": "application/json", origin: "https://d-pepper-app.vercel.app", "x-forwarded-for": `10.5.${++ip}.1` },
@@ -205,13 +205,24 @@ formHandler = (body) => mockForm.submit(body);
   const sent = sentBodies.at(-1);
   check("返信不要で連絡先が送られてきても、フォームへは送らない（項目にも本文にも入らない）",
     r.status === 200 && formCalls === 1 && !sent.has(TEST_EMAIL_ENTRY) && ![...sent.values()].some((v) => v.includes(CUSTOMER_EMAIL)));
-  // 本物の設定（EMAIL_FIELD 未確認）のままでは返信希望を受け付けない
+  // 設定値がフォームで確認した項目IDと一致していること
+  check("EMAIL_FIELD はフォームで確認した項目ID（entry.792546235）", F.EMAIL_FIELD === "entry.792546235");
+  check("REPLY_FIELD は変更されていない（entry.1518046549／返信希望・返信不要）",
+    F.REPLY_FIELD?.entry === "entry.1518046549" && F.REPLY_FIELD?.choices?.返信希望 === "返信希望" && F.REPLY_FIELD?.choices?.返信不要 === "返信不要");
+  // 返信希望：入力したアドレスが entry.792546235 にだけ送られる
   formCalls = 0;
-  const r2 = await sh.POST(shareReq("返信希望", undefined, CUSTOMER_EMAIL));
-  check(`EMAIL_FIELD ${F.EMAIL_FIELD === null ? "未設定" : "設定済み"}：返信先を届けられない状態では返信希望を送らない`,
-    F.EMAIL_FIELD === null ? (r2.status === 503 && formCalls === 0) : true, `status ${r2.status}`);
-  const r3 = await sh.POST(shareReq("返信不要"));
-  check("EMAIL_FIELD 未設定でも、返信不要の共有はできる", r3.status === 200);
+  const r4 = await sh.POST(shareReq("返信希望", undefined, CUSTOMER_EMAIL));
+  const sent4 = sentBodies.at(-1);
+  const holders = [...sent4.entries()].filter(([, v]) => v.includes(CUSTOMER_EMAIL)).map(([k]) => k);
+  check("返信希望：アドレスは entry.792546235 にだけ送られ、返信は entry.1518046549＝返信希望",
+    r4.status === 200 && formCalls === 1 && holders.join(",") === "entry.792546235" && sent4.get("entry.1518046549") === "返信希望", holders.join(","));
+  // 項目IDを外した場合の安全装置（返信先なしで返信希望を送らない）は残っている
+  formCalls = 0;
+  const shNoEmail = sh.createSharePOST({ emailField: null });
+  const r2 = await shNoEmail.call(null, shareReq("返信希望", undefined, CUSTOMER_EMAIL));
+  check("返信先の項目IDがない設定では、返信希望を 503 で止め、フォームへ送らない", r2.status === 503 && formCalls === 0, `status ${r2.status}`);
+  const r3 = await shNoEmail.call(null, shareReq("返信不要"));
+  check("その設定でも、返信不要の共有はできる", r3.status === 200);
   // メールアドレスをログに出さない
   check("サーバーログにお客様のメールアドレスが出ない", !serverLogs.some((l) => l.includes("customer.test@") || l.includes("@example.com")),
     `ログ ${serverLogs.length} 行を確認`);

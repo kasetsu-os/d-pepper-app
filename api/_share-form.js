@@ -19,9 +19,10 @@ export const REPLY_FIELD = {
 
 // 「返信希望の場合のみ入力してください。」（返信先メールアドレス）の項目ID。
 // Googleフォームの「事前入力したURLを取得」で確認した値だけを入れる（推測で入れない）。
-// 形式: "entry.<数字>"。null の間は、返信希望の履歴共有をサーバーで受け付けない
+// 形式: "entry.<数字>"。null にすると、返信希望の履歴共有をサーバーで受け付けない
 // （返信先を届けられないまま「返信希望」として送らないため）。
-export const EMAIL_FIELD = null;
+// 2026-10-14 店長がフォームの事前入力URLで確認した値
+export const EMAIL_FIELD = "entry.792546235";
 
 export function buildFormParams({ consultText, aiText, reply, replyEmail }, replyField = REPLY_FIELD, emailField = EMAIL_FIELD) {
   const params = new URLSearchParams({
