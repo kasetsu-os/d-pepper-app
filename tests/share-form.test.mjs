@@ -9,6 +9,9 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import vm from "node:vm";
 
+// Vercel のサーバーと同じく UTC で動かす（日本時間の端末でも時差の不具合を再現できるように）
+process.env.TZ = "UTC";
+
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const quiet = () => {};
 const realLog = console.log;
@@ -65,11 +68,11 @@ globalThis.fetch = async (url, opt = {}) => {
 };
 
 let ip = 0;
-const shareReq = (replyRequest) => new Request("https://x/api/share-history", {
+const shareReq = (replyRequest, createdAt = "2026-10-12T01:00:00.000Z") => new Request("https://x/api/share-history", {
   method: "POST",
   headers: { "content-type": "application/json", origin: "https://d-pepper-app.vercel.app", "x-forwarded-for": `10.5.${++ip}.1` },
   body: JSON.stringify({
-    item: { id: 1712345678901, createdAt: "2026-10-12T01:00:00.000Z", category: "カラー相談", group: "ケア", text: "色落ちが気になります", aiResponse: "洗い方を見直しましょう。" },
+    item: { id: 1712345678901, createdAt, category: "カラー相談", group: "ケア", text: "色落ちが気になります", aiResponse: "洗い方を見直しましょう。" },
     replyRequest,
   }),
 });
@@ -132,6 +135,34 @@ for (const [name, handler, expected] of [
   check(`履歴共有API：${name} → ${expected}（ok を返さない）`, r.status === expected && body.ok !== true, `status ${r.status}`);
 }
 formHandler = (body) => mockForm.submit(body);
+
+// ── 4) 相談日時は日本時間で送る（サーバーは UTC）──
+{
+  const sentBodies = [];
+  formHandler = (body) => { sentBodies.push(new URLSearchParams(body)); return mockForm.submit(body); };
+  const cases = [
+    ["2026-10-14T01:29:00.000Z", "2026/10/14 10:29", "通常（+9時間）"],
+    ["2026-10-14T16:30:00.000Z", "2026/10/15 01:30", "日付をまたぐ"],
+    ["2026-12-31T15:00:00.000Z", "2027/01/01 00:00", "年をまたぐ"],
+    ["2026-10-31T23:59:00.000Z", "2026/11/01 08:59", "月をまたぐ"],
+  ];
+  check("このテストは UTC で動いている（時差の不具合を再現できる条件）", new Date("2026-10-14T01:29:00.000Z").getHours() === 1);
+  for (const [iso, expected, label] of cases) {
+    const r = await sh.POST(shareReq("返信不要", iso));
+    const consult = sentBodies.at(-1)?.get("entry.1825538084") || "";
+    const line = consult.split("\n").find((l) => l.startsWith("相談日時：")) || "";
+    check(`相談日時（${label}）：${iso} → ${expected}`, r.status === 200 && line === `相談日時：${expected}`, line);
+  }
+
+  // ── 5) 返信希望：API から送る値（フォームの選択肢そのもの）──
+  for (const [replyRequest, expected, label] of [["返信希望", "返信希望", "返信希望"], ["返信不要", "返信不要", "返信不要"], [undefined, "返信希望", "指定なし"], ["その他", "返信希望", "想定外の値"]]) {
+    await sh.POST(shareReq(replyRequest));
+    const sent = sentBodies.at(-1);
+    check(`返信（${label}）：entry.1518046549 に「${expected}」を送り、相談文の「返信希望：」行も一致`,
+      sent?.get("entry.1518046549") === expected && (sent?.get("entry.1825538084") || "").includes(`返信希望：${expected}`), sent?.get("entry.1518046549"));
+  }
+  formHandler = (body) => mockForm.submit(body);
+}
 
 console.log = realLog;
 console.log(results.join("\n"));
