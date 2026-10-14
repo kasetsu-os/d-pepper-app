@@ -7,8 +7,15 @@ export const FORM_ACTION =
 // 必須の質問「返信を希望しますか？」の項目ID と、選択肢の文字列。
 // Googleフォームの「事前入力したURLを取得」で確認した値だけを入れる（推測で入れない）。
 // 形式: { entry: "entry.<数字>", choices: { 返信希望: "<選択肢の文字列>", 返信不要: "<選択肢の文字列>" } }
-// null のままだと、この質問を送らない（フォーム側で必須の場合、Google が 400 を返す）。
-export const REPLY_FIELD = null;
+// null にすると、この質問を送らない（フォーム側で必須の場合、Google が 400 を返す）。
+// 2026-10-14 店長がフォームで確認した値
+export const REPLY_FIELD = {
+  entry: "entry.1518046549",
+  choices: {
+    返信希望: "返信希望",
+    返信不要: "返信不要",
+  },
+};
 
 export function buildFormParams({ consultText, aiText, reply }, replyField = REPLY_FIELD) {
   const params = new URLSearchParams({

@@ -2,7 +2,7 @@
 // 実行: node tests/share-form.test.mjs
 // 本物の Googleフォーム・メールには送らない。必須項目を検査する「模擬フォーム」と、
 // MailApp を差し替えた通知スクリプトで、送信 → 記録 → 通知 を再現する。
-// 注意: 返信の質問の項目ID・選択肢はこのテスト用の仮の値。本物の値は Googleフォームで確認する。
+// 返信の質問の項目ID・選択肢は api/_share-form.js の REPLY_FIELD（店長がフォームで確認した値）を使う。
 
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -22,7 +22,9 @@ const results = [];
 const check = (name, ok, detail = "") => results.push(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? "  — " + detail : ""}`);
 
 // ── 模擬フォーム：必須項目・選択肢を Google と同じように検査し、受け付けた回答を記録する ──
-const TEST_REPLY_FIELD = { entry: "entry.999000999", choices: { 返信希望: "返信希望", 返信不要: "返信不要" } }; // テスト用の仮の値
+// 本物のフォームの項目ID（2026-10-14 確認）。REPLY_FIELD がこれと一致していることもテストする
+const FORM_REPLY_ENTRY = "entry.1518046549";
+const TEST_REPLY_FIELD = { entry: FORM_REPLY_ENTRY, choices: { 返信希望: "返信希望", 返信不要: "返信不要" } };
 const mockForm = {
   questions: [
     { entry: "entry.1825538084", title: "ご相談内容", required: true },
@@ -72,16 +74,27 @@ const shareReq = (replyRequest) => new Request("https://x/api/share-history", {
   }),
 });
 
-// ── 1) 現在の設定（返信の項目ID 未設定）では、必須の質問が欠けて Google が 400 → 失敗として返す ──
+// ── 1) 返信の質問を送らない場合（修正前と同じ状態）は、必須の質問が欠けて 400 になる（不具合の再現）──
 {
+  const res = mockForm.submit(F.buildFormParams({ consultText: "c", aiText: "a", reply: "返信希望" }, null).toString());
+  check("返信の質問を送らないと、模擬フォームは 400（Preview で起きた失敗の再現）", res.status === 400);
+}
+check("REPLY_FIELD はフォームで確認した項目ID・選択肢と一致",
+  F.REPLY_FIELD?.entry === FORM_REPLY_ENTRY && F.REPLY_FIELD?.choices?.返信希望 === "返信希望" && F.REPLY_FIELD?.choices?.返信不要 === "返信不要");
+
+// ── 1b) 履歴共有API を通して：返信希望／返信不要 の両方で 受け付け → 記録 → 通知 ──
+for (const reply of ["返信希望", "返信不要"]) {
   formCalls = 0;
   const before = mockForm.responses.length;
-  const r = await sh.POST(shareReq("返信希望"));
+  const r = await sh.POST(shareReq(reply));
   const body = await r.json();
-  check("返信の項目ID 未設定：必須の質問が欠け 400 → API は 502（成功と返さない）",
-    F.REPLY_FIELD === null ? (r.status === 502 && body.ok !== true && mockForm.responses.length === before) : true,
-    F.REPLY_FIELD === null ? `status ${r.status} / ${body.error}` : "REPLY_FIELD 設定済みのため対象外");
-  check("失敗しても Google へは1回だけ送る（自動で再送しない）", formCalls === 1, `送信 ${formCalls} 回`);
+  const recorded = mockForm.responses.at(-1);
+  check(`API（${reply}）：200 で ok を返す`, r.status === 200 && body.ok === true, `status ${r.status}`);
+  check(`API（${reply}）：フォームへの送信は1回、回答は1件だけ記録`, formCalls === 1 && mockForm.responses.length === before + 1);
+  check(`API（${reply}）：回答の「返信を希望しますか？」＝${reply}`, recorded?.["返信を希望しますか？"]?.[0] === reply);
+  const mails = notify(recorded);
+  check(`API（${reply}）：店舗宛てに通知が1通、件名は【${reply}】`,
+    mails.length === 1 && mails[0].to === "dais20101119@gmail.com" && mails[0].subject.endsWith(`【${reply}】`), mails[0]?.subject);
 }
 
 // ── 2) 項目ID と選択肢を設定すれば、返信希望／返信不要 の両方で 記録 → 通知 まで通る ──
