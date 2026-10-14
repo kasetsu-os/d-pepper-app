@@ -130,6 +130,7 @@ function onFormSubmit(e) {
     const customerEmail = getValue(namedValues, [
       'メールアドレス', 'email', 'メール', 'Email',
       'お客様メールアドレス', '返信先メールアドレス', '連絡先メールアドレス',
+      '返信希望の場合のみ入力してください。', '返信希望の場合のみ入力してください',
     ]);
 
     // ── consultText の構造から各フィールドを抽出 ─────────────

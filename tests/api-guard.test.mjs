@@ -86,7 +86,8 @@ await expectStatus("同じIPから1分以内に7回目", g.POST(req({ prompt: P 
 
 // ── 履歴共有 ──
 const item = { id: 1, createdAt: new Date().toISOString(), category: "カラー相談", text: "t", aiResponse: "a" };
-await expectStatus("履歴共有 通常", sh.POST(req({ item })), 200);
+// 返信希望は返信先メールアドレスが必須（2026-10 仕様）のため、通常の共有は返信不要で確認する
+await expectStatus("履歴共有 通常", sh.POST(req({ item, replyRequest: "返信不要" })), 200);
 await expectStatus("履歴共有 他サイトのOrigin", sh.POST(req({ item }, { origin: "https://evil.example" })), 403);
 await expectStatus("履歴共有 不正な形式", sh.POST(req({ item: { ...item, text: { x: 1 } } })), 400);
 for (let i = 0; i < 3; i++) await sh.POST(req({ item }, { ip: "8.8.8.8" }));
@@ -148,7 +149,7 @@ const streamReq = (text, { chunk = 16_384, origin = "https://d-pepper-app.vercel
   const s2 = streamReq(JSON.stringify({ prompt: "x", pad: "A".repeat(6_000_000) }));
   const st = (await g.POST(s2.r)).status;
   check("上限超えは途中で読み込みを止める", st === 413 && s2.pulled() < s2.total, `読み込み ${s2.pulled()} / 全体 ${s2.total} バイト`);
-  const s3 = streamReq(JSON.stringify({ item: { id: 1, createdAt: new Date().toISOString(), text: "あ".repeat(20_000) } }));
+  const s3 = streamReq(JSON.stringify({ item: { id: 1, createdAt: new Date().toISOString(), text: "あ".repeat(20_000) }, replyRequest: "返信不要" }));
   check("上限内（日本語6万バイト）の共有は通る", (await sh.POST(s3.r)).status === 200);
 }
 
@@ -248,7 +249,7 @@ const streamReq = (text, { chunk = 16_384, origin = "https://d-pepper-app.vercel
   check("履歴共有：本文の item が配列は400", !threw && st === 400);
   try { st = (await sh.POST(new Request("https://x/api", { method: "POST", body: "[1,2]", headers: { "content-type": "application/json", origin: "https://d-pepper-app.vercel.app", "x-forwarded-for": "10.6.6.6" } }))).status; } catch { st = "例外"; }
   check("履歴共有：本文全体が配列は400", st === 400, `status ${st}`);
-  await expectStatus("履歴共有：通常の履歴（文字列ID・お気に入りあり）は通る", sh.POST(req({ item: { ...okItem, id: "h-1", favorite: true } })), 200);
+  await expectStatus("履歴共有：通常の履歴（文字列ID・お気に入りあり）は通る", sh.POST(req({ item: { ...okItem, id: "h-1", favorite: true }, replyRequest: "返信不要" })), 200);
 }
 
 // ── 連続送信の記録の掃除で、1時間制限の記録を早く消さない ──

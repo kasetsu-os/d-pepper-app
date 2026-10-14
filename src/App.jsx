@@ -4,6 +4,7 @@ import { buildDpepperPrompt } from "./lib/dpepperPrompt";
 import { encodeWithinBudget, PAYLOAD_TOO_LARGE } from "./lib/imageBudget";
 import { buildRecruitPrompt, classifyRecruit } from "./lib/recruitEngine";
 import { askGemini } from "./lib/geminiClient";
+import { isValidEmail, normalizeEmail, MAX_EMAIL_LENGTH } from "./lib/contact";
 
 function withDaIs(text) {
   if (!text || !text.includes("Da-is")) return text;
@@ -469,6 +470,8 @@ function App() {
   const [historyShareConfirm, setHistoryShareConfirm] = useState(false);
   const [historyShareStatus, setHistoryShareStatus] = useState(null); // null | "sending" | "sent" | "error"
   const [historyShareReply, setHistoryShareReply] = useState("返信希望"); // "返信希望" | "返信不要"
+  const [historyShareEmail, setHistoryShareEmail] = useState(""); // 返信希望のときだけ使う（端末には保存しない）
+  const [historyShareEmailTouched, setHistoryShareEmailTouched] = useState(false);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
   const resultCardRef = useRef(null);
@@ -833,20 +836,30 @@ function App() {
     setHistoryShareConfirm(false);
     setHistoryShareStatus(null);
     setHistoryShareReply("返信希望");
+    setHistoryShareEmail("");
+    setHistoryShareEmailTouched(false);
   }
 
-  async function handleHistoryShare(item, replyRequest) {
+  async function handleHistoryShare(item, replyRequest, replyEmail) {
+    const reply = replyRequest === "返信不要" ? "返信不要" : "返信希望";
+    // 返信希望は返信先メールアドレスが必須（未入力・不正な形式では送らない）
+    if (reply === "返信希望" && !isValidEmail(replyEmail)) {
+      setHistoryShareEmailTouched(true);
+      return;
+    }
     // 送信中の二重送信を防ぐ（フォームには重複を取り消す仕組みがないため）
     if (historyShareInFlightRef.current) return;
     historyShareInFlightRef.current = true;
-    const reply = replyRequest === "返信不要" ? "返信不要" : "返信希望";
     setHistoryShareStatus("sending");
     setHistoryShareConfirm(false);
     try {
       const res = await fetch("/api/share-history", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ item, replyRequest: reply }),
+        // 返信先は返信希望のときだけ送る
+        body: JSON.stringify(reply === "返信希望"
+          ? { item, replyRequest: reply, replyEmail: normalizeEmail(replyEmail) }
+          : { item, replyRequest: reply }),
       });
       if (res.ok) {
         setHistoryShareStatus("sent");
@@ -1601,6 +1614,32 @@ function App() {
                       </button>
                     </div>
                   </div>
+                  {historyShareReply === "返信希望" && (
+                    <div className="history-detail-reply-email">
+                      <label className="history-detail-reply-email-label" htmlFor="history-share-email">
+                        返信先メールアドレス<span className="history-detail-reply-email-required">（必須）</span>
+                      </label>
+                      <input
+                        id="history-share-email"
+                        type="email"
+                        inputMode="email"
+                        autoComplete="email"
+                        maxLength={MAX_EMAIL_LENGTH}
+                        className="url-input history-detail-reply-email-input"
+                        placeholder="例：name@example.com"
+                        value={historyShareEmail}
+                        onChange={(e) => setHistoryShareEmail(e.target.value)}
+                        onBlur={() => setHistoryShareEmailTouched(true)}
+                        aria-invalid={historyShareEmailTouched && !isValidEmail(historyShareEmail)}
+                        aria-describedby="history-share-email-note"
+                      />
+                      <p id="history-share-email-note" className="history-detail-reply-email-note">
+                        {historyShareEmailTouched && !isValidEmail(historyShareEmail)
+                          ? "メールアドレスの形式を確認してください。"
+                          : "Da-isからの返信に使います。返信不要の場合は入力不要です。"}
+                      </p>
+                    </div>
+                  )}
                   <div className="history-detail-share-confirm-btns">
                     <button
                       type="button"
@@ -1612,7 +1651,8 @@ function App() {
                     <button
                       type="button"
                       className="history-detail-share-go"
-                      onClick={() => handleHistoryShare(historyDetailItem, historyShareReply)}
+                      disabled={historyShareReply === "返信希望" && !isValidEmail(historyShareEmail)}
+                      onClick={() => handleHistoryShare(historyDetailItem, historyShareReply, historyShareEmail)}
                     >
                       共有する
                     </button>

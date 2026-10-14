@@ -17,7 +17,13 @@ export const REPLY_FIELD = {
   },
 };
 
-export function buildFormParams({ consultText, aiText, reply }, replyField = REPLY_FIELD) {
+// 「返信希望の場合のみ入力してください。」（返信先メールアドレス）の項目ID。
+// Googleフォームの「事前入力したURLを取得」で確認した値だけを入れる（推測で入れない）。
+// 形式: "entry.<数字>"。null の間は、返信希望の履歴共有をサーバーで受け付けない
+// （返信先を届けられないまま「返信希望」として送らないため）。
+export const EMAIL_FIELD = null;
+
+export function buildFormParams({ consultText, aiText, reply, replyEmail }, replyField = REPLY_FIELD, emailField = EMAIL_FIELD) {
   const params = new URLSearchParams({
     "entry.1825538084": consultText,
     "entry.948403332": aiText.slice(0, 3500),
@@ -27,6 +33,11 @@ export function buildFormParams({ consultText, aiText, reply }, replyField = REP
     const choice = replyField.choices[reply === "返信不要" ? "返信不要" : "返信希望"];
     if (!choice) throw new Error("reply choice is not configured");
     params.set(replyField.entry, choice);
+  }
+  // 返信先は「返信希望」のときだけ送る（返信不要のときは混入させない）
+  if (reply === "返信希望" && replyEmail) {
+    if (!emailField) throw new Error("reply email field is not configured");
+    params.set(emailField, replyEmail);
   }
   params.set("fvv", "1");
   params.set("pageHistory", "0");

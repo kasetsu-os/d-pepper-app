@@ -15,7 +15,9 @@ process.env.TZ = "UTC";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const quiet = () => {};
 const realLog = console.log;
-console.log = console.warn = console.error = quiet;
+// サーバーのログは画面に出さず記録だけする（メールアドレスが出ていないかを確認するため）
+const serverLogs = [];
+console.log = console.warn = console.error = (...a) => serverLogs.push(a.map(String).join(" "));
 
 const F = await import(path.join(root, "api/_share-form.js"));
 const sh = await import(path.join(root, "api/share-history.js"));
@@ -28,12 +30,17 @@ const check = (name, ok, detail = "") => results.push(`${ok ? "PASS" : "FAIL"}  
 // 本物のフォームの項目ID（2026-10-14 確認）。REPLY_FIELD がこれと一致していることもテストする
 const FORM_REPLY_ENTRY = "entry.1518046549";
 const TEST_REPLY_FIELD = { entry: FORM_REPLY_ENTRY, choices: { 返信希望: "返信希望", 返信不要: "返信不要" } };
+// 返信先メールアドレスの質問：本物の項目IDは未確認のため、テスト専用の仮の値を使う
+const TEST_EMAIL_ENTRY = "entry.TEST_ONLY_EMAIL";
+const EMAIL_QUESTION = "返信希望の場合のみ入力してください。";
+const CUSTOMER_EMAIL = "customer.test@example.com";
 const mockForm = {
   questions: [
     { entry: "entry.1825538084", title: "ご相談内容", required: true },
     { entry: "entry.948403332", title: "Dペッパーの返答・メモ", required: false },
     { entry: "entry.1738990388", title: "添付情報", required: false },
     { entry: TEST_REPLY_FIELD.entry, title: "返信を希望しますか？", required: true, choices: ["返信希望", "返信不要"] },
+    { entry: TEST_EMAIL_ENTRY, title: EMAIL_QUESTION, required: false },
   ],
   responses: [],
   submit(body) {
@@ -68,12 +75,15 @@ globalThis.fetch = async (url, opt = {}) => {
 };
 
 let ip = 0;
-const shareReq = (replyRequest, createdAt = "2026-10-12T01:00:00.000Z") => new Request("https://x/api/share-history", {
+// 返信先の項目IDを仮の値で設定した履歴共有API（本物の設定は EMAIL_FIELD が埋まるまで返信希望を受け付けない）
+const shT = { POST: sh.createSharePOST({ emailField: TEST_EMAIL_ENTRY }) };
+const shareReq = (replyRequest, createdAt = "2026-10-12T01:00:00.000Z", replyEmail) => new Request("https://x/api/share-history", {
   method: "POST",
   headers: { "content-type": "application/json", origin: "https://d-pepper-app.vercel.app", "x-forwarded-for": `10.5.${++ip}.1` },
   body: JSON.stringify({
     item: { id: 1712345678901, createdAt, category: "カラー相談", group: "ケア", text: "色落ちが気になります", aiResponse: "洗い方を見直しましょう。" },
     replyRequest,
+    ...(replyEmail !== undefined ? { replyEmail } : {}),
   }),
 });
 
@@ -89,7 +99,7 @@ check("REPLY_FIELD はフォームで確認した項目ID・選択肢と一致",
 for (const reply of ["返信希望", "返信不要"]) {
   formCalls = 0;
   const before = mockForm.responses.length;
-  const r = await sh.POST(shareReq(reply));
+  const r = await shT.POST(shareReq(reply, undefined, reply === "返信希望" ? CUSTOMER_EMAIL : undefined));
   const body = await r.json();
   const recorded = mockForm.responses.at(-1);
   check(`API（${reply}）：200 で ok を返す`, r.status === 200 && body.ok === true, `status ${r.status}`);
@@ -98,6 +108,14 @@ for (const reply of ["返信希望", "返信不要"]) {
   const mails = notify(recorded);
   check(`API（${reply}）：店舗宛てに通知が1通、件名は【${reply}】`,
     mails.length === 1 && mails[0].to === "dais20101119@gmail.com" && mails[0].subject.endsWith(`【${reply}】`), mails[0]?.subject);
+  if (reply === "返信希望") {
+    check("API（返信希望）：返信先が回答に記録され、通知の本文（テキスト・HTML）に表示される",
+      recorded?.[EMAIL_QUESTION]?.[0] === CUSTOMER_EMAIL && mails[0].body.includes(`返信先メール：${CUSTOMER_EMAIL}`) && mails[0].htmlBody.includes(CUSTOMER_EMAIL));
+    check("API（返信希望）：通知は店舗宛てだけ（お客様のアドレスへ自動送信しない）",
+      Object.keys(mails[0]).sort().join(",") === "body,htmlBody,subject,to" && mails[0].to !== CUSTOMER_EMAIL);
+  } else {
+    check("API（返信不要）：連絡先なしで共有でき、回答に返信先は記録されない", !(EMAIL_QUESTION in (recorded || {})));
+  }
 }
 
 // ── 2) 項目ID と選択肢を設定すれば、返信希望／返信不要 の両方で 記録 → 通知 まで通る ──
@@ -148,7 +166,7 @@ formHandler = (body) => mockForm.submit(body);
   ];
   check("このテストは UTC で動いている（時差の不具合を再現できる条件）", new Date("2026-10-14T01:29:00.000Z").getHours() === 1);
   for (const [iso, expected, label] of cases) {
-    const r = await sh.POST(shareReq("返信不要", iso));
+    const r = await shT.POST(shareReq("返信不要", iso));
     const consult = sentBodies.at(-1)?.get("entry.1825538084") || "";
     const line = consult.split("\n").find((l) => l.startsWith("相談日時：")) || "";
     check(`相談日時（${label}）：${iso} → ${expected}`, r.status === 200 && line === `相談日時：${expected}`, line);
@@ -156,11 +174,47 @@ formHandler = (body) => mockForm.submit(body);
 
   // ── 5) 返信希望：API から送る値（フォームの選択肢そのもの）──
   for (const [replyRequest, expected, label] of [["返信希望", "返信希望", "返信希望"], ["返信不要", "返信不要", "返信不要"], [undefined, "返信希望", "指定なし"], ["その他", "返信希望", "想定外の値"]]) {
-    await sh.POST(shareReq(replyRequest));
+    await shT.POST(shareReq(replyRequest, undefined, expected === "返信希望" ? CUSTOMER_EMAIL : undefined));
     const sent = sentBodies.at(-1);
     check(`返信（${label}）：entry.1518046549 に「${expected}」を送り、相談文の「返信希望：」行も一致`,
       sent?.get("entry.1518046549") === expected && (sent?.get("entry.1825538084") || "").includes(`返信希望：${expected}`), sent?.get("entry.1518046549"));
   }
+  formHandler = (body) => mockForm.submit(body);
+}
+
+// ── 6) 返信先メールアドレスの検証（サーバー側）──
+{
+  const sentBodies = [];
+  formHandler = (body) => { sentBodies.push(new URLSearchParams(body)); return mockForm.submit(body); };
+  const bad = [
+    ["未入力", undefined], ["空欄", ""], ["空白だけ", "   "], ["@なし", "customer.example.com"],
+    ["ドメインなし", "customer@"], ["空白を含む", "cus tomer@example.com"], ["改行で宛先を足す", "a@example.com\nBcc: x@evil.example"],
+    ["カンマで複数", "a@example.com,b@example.com"], ["タグを含む", "<script>@example.com"], ["文字列以外", 12345], ["長すぎる", "a".repeat(250) + "@example.com"],
+  ];
+  for (const [label, email] of bad) {
+    formCalls = 0;
+    const r = await shT.POST(shareReq("返信希望", undefined, email));
+    check(`返信希望で返信先が${label}：400 で拒否し、フォームへ送らない`, r.status === 400 && formCalls === 0, `status ${r.status} / 送信 ${formCalls}`);
+  }
+  // 前後の空白は取り除いて送る
+  await shT.POST(shareReq("返信希望", undefined, `  ${CUSTOMER_EMAIL}  `));
+  check("返信先の前後の空白は取り除いて送る", sentBodies.at(-1)?.get(TEST_EMAIL_ENTRY) === CUSTOMER_EMAIL);
+  // 返信不要で連絡先が混入しない
+  formCalls = 0;
+  const r = await shT.POST(shareReq("返信不要", undefined, CUSTOMER_EMAIL));
+  const sent = sentBodies.at(-1);
+  check("返信不要で連絡先が送られてきても、フォームへは送らない（項目にも本文にも入らない）",
+    r.status === 200 && formCalls === 1 && !sent.has(TEST_EMAIL_ENTRY) && ![...sent.values()].some((v) => v.includes(CUSTOMER_EMAIL)));
+  // 本物の設定（EMAIL_FIELD 未確認）のままでは返信希望を受け付けない
+  formCalls = 0;
+  const r2 = await sh.POST(shareReq("返信希望", undefined, CUSTOMER_EMAIL));
+  check(`EMAIL_FIELD ${F.EMAIL_FIELD === null ? "未設定" : "設定済み"}：返信先を届けられない状態では返信希望を送らない`,
+    F.EMAIL_FIELD === null ? (r2.status === 503 && formCalls === 0) : true, `status ${r2.status}`);
+  const r3 = await sh.POST(shareReq("返信不要"));
+  check("EMAIL_FIELD 未設定でも、返信不要の共有はできる", r3.status === 200);
+  // メールアドレスをログに出さない
+  check("サーバーログにお客様のメールアドレスが出ない", !serverLogs.some((l) => l.includes("customer.test@") || l.includes("@example.com")),
+    `ログ ${serverLogs.length} 行を確認`);
   formHandler = (body) => mockForm.submit(body);
 }
 

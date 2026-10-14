@@ -209,25 +209,59 @@ await linkCheck("履歴詳細");
 await injectedCheck("履歴詳細");
 
 // 履歴共有（差し替えた /api/share-history へ）
+const shareCalls = () => apiCalls.filter((c) => c.path === "/api/share-history");
+const goBtn = () => page.locator(".history-detail-share-go");
+const emailInput = () => page.locator("#history-share-email");
+
+// 返信希望（初期値）：返信先の入力欄が出て、未入力・不正な形式では送れない
 await page.locator(".history-detail-share-btn").click();
-await page.locator(".history-detail-share-go").click();
+check("返信希望では返信先メールアドレスの入力欄が表示される", await emailInput().isVisible());
+check("返信希望で未入力のときは「共有する」を押せない", await goBtn().isDisabled());
+await emailInput().fill("customer.example.com");
+await emailInput().blur();
+check("返信希望で不正な形式のときは押せず、形式の確認を案内する",
+  await goBtn().isDisabled() && (await page.getByText("メールアドレスの形式を確認してください", { exact: false }).count()) > 0);
+const beforeInvalid = shareCalls().length;
+await goBtn().evaluate((btn) => btn.click());
+check("返信希望で不正な形式のときは送信しない（押せない状態で押しても送らない）", shareCalls().length === beforeInvalid);
+
+// 返信不要：入力欄は出ず、連絡先は送らない
+await page.getByRole("button", { name: "返信不要" }).click();
+check("返信不要では返信先の入力欄が表示されない", (await emailInput().count()) === 0);
+await goBtn().click();
 await page.getByText("相談内容をDa-isに共有しました", { exact: false }).waitFor({ timeout: 5000 }).catch(() => {});
-const shareReq = apiCalls.find((c) => c.path === "/api/share-history");
-const sentItem = shareReq ? JSON.parse(shareReq.body).item : null;
+const shareReq = shareCalls().at(-1);
+const shareBody = shareReq ? JSON.parse(shareReq.body) : {};
 check("履歴共有は自サイトの /api/share-history にだけ送る（差し替え済み）", !!shareReq);
-check("履歴共有で送る内容は保存されている履歴そのまま", JSON.stringify(sentItem) === JSON.stringify(seeded[0]));
+check("履歴共有で送る内容は保存されている履歴そのまま", JSON.stringify(shareBody.item) === JSON.stringify(seeded[0]));
+check("返信不要では連絡先を送らない（入力途中の値も混入しない）", shareBody.replyRequest === "返信不要" && !("replyEmail" in shareBody));
+
+// 返信希望：正しい返信先を入れて送る
+await page.locator(".history-detail-share-again").click();
+await page.locator(".history-detail-share-btn").click();
+await page.getByRole("button", { name: "返信希望" }).click();
+await emailInput().fill("  customer.test@example.com ");
+check("返信希望で正しい形式なら「共有する」を押せる", !(await goBtn().isDisabled()));
+await goBtn().click();
+await page.getByText("相談内容をDa-isに共有しました", { exact: false }).waitFor({ timeout: 5000 }).catch(() => {});
+const replyBody = JSON.parse(shareCalls().at(-1)?.body || "{}");
+check("返信希望では返信先（前後の空白を除いた値）を送る",
+  replyBody.replyRequest === "返信希望" && replyBody.replyEmail === "customer.test@example.com");
+check("返信先メールアドレスは端末（localStorage）に保存しない",
+  !(await page.evaluate(() => Object.values(localStorage).some((v) => String(v).includes("customer.test@")))));
 
 // 履歴共有が失敗した場合：成功と表示せず、二重押しでも送信は1回
 {
   shareFailNext = true;
-  const before = apiCalls.filter((c) => c.path === "/api/share-history").length;
+  const before = shareCalls().length;
   await page.locator(".history-detail-share-again").click();
   await page.locator(".history-detail-share-btn").click();
-  await page.locator(".history-detail-share-go").evaluate((btn) => { btn.click(); btn.click(); });
+  await emailInput().fill("customer.test@example.com");
+  await goBtn().evaluate((btn) => { btn.click(); btn.click(); });
   await page.getByText("共有に失敗しました", { exact: false }).waitFor({ timeout: 5000 }).catch(() => {});
   const failShown = await page.getByText("共有に失敗しました", { exact: false }).count();
   const okShown = await page.getByText("相談内容をDa-isに共有しました", { exact: false }).count();
-  const sentCount = apiCalls.filter((c) => c.path === "/api/share-history").length - before;
+  const sentCount = shareCalls().length - before;
   check("履歴共有の失敗時は「失敗しました」と表示し、成功とは表示しない", failShown > 0 && okShown === 0);
   check("「共有する」を素早く2回押しても、送信は1回だけ", sentCount === 1, `送信 ${sentCount} 回`);
   shareFailNext = false;

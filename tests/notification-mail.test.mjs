@@ -108,6 +108,25 @@ for (const field of ["返信を希望しますか？", "返信を希望します
   }
 }
 
+// ── 6) フォームの質問「返信希望の場合のみ入力してください。」を返信先として読む ──
+for (const title of ["返信希望の場合のみ入力してください。", "返信希望の場合のみ入力してください"]) {
+  const { sent } = runSubmit({
+    "ご相談内容": [historyText(["返信希望：返信希望", "", "＝＝ご相談内容＝＝", "返信をお願いします"])],
+    [title]: ["customer.test@example.com"],
+  });
+  const opt = sent[0]?.[0] || {};
+  check(`質問名「${title}」の返信先を本文に表示する`,
+    sent.length === 1 && (opt.body || "").includes("返信先メール：customer.test@example.com") && (opt.htmlBody || "").includes("customer.test@example.com") && opt.to === SHOP_EMAIL);
+}
+{
+  const { sent } = runSubmit({
+    "ご相談内容": [historyText(["返信希望：返信希望", "", "＝＝ご相談内容＝＝", "x"])],
+    "返信希望の場合のみ入力してください。": [`"><a href="https://evil.example/">返信はこちら</a>`],
+  });
+  const html = sent[0]?.[0]?.htmlBody || "";
+  check("返信先の欄に入った値もエスケープされ、リンクにならない", sent.length === 1 && !/<a[\s>]/i.test(html) && html.includes("&lt;a href="));
+}
+
 console.log(results.join("\n"));
 const failed = results.filter((x) => x.startsWith("FAIL")).length;
 console.log(`\n合計 ${results.length} 項目 / 失敗 ${failed}`);
