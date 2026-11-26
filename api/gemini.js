@@ -314,15 +314,13 @@ export async function POST(request) {
   const requestBody = {
     contents: [{ role: "user", parts }],
     generationConfig: {
-      temperature: 0.4,
-      topP: 0.9,
-      maxOutputTokens: 1024,
-      thinkingConfig: { thinkingBudget: 0 },
+      // 3.5 Flash-Lite の既定の minimal thinking を使う。
+      maxOutputTokens: 2048,
     },
   };
 
   // APIキーはURLではなくヘッダーで渡す（URLはログ等に残りやすいため）
-  const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+  const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent";
 
   console.log("Calling Gemini | parts:", parts.length, "| hasImages:", validImages.length > 0);
   const geminiResult = await fetchGemini(apiUrl, apiKey, requestBody, validImages.length > 0);
@@ -334,18 +332,15 @@ export async function POST(request) {
 
   const data = await geminiResult.res.json();
 
-  if (!data.candidates || data.candidates.length === 0) {
-    console.error("Gemini: no candidates in response");
-    return Response.json({ error: "Gemini response has no candidates" }, { status: 500 });
-  }
-
-  const candidate = data.candidates[0];
+  const candidate = data.candidates?.[0];
   console.log("Gemini finishReason:", candidate?.finishReason);
-
-  const text = candidate?.content?.parts?.[0]?.text;
-  if (!text) {
-    console.error("Gemini: text is empty. finishReason:", candidate?.finishReason);
-    return Response.json({ error: "Gemini response text is empty" }, { status: 500 });
+  const responseParts = candidate?.content?.parts;
+  const text = Array.isArray(responseParts)
+    ? responseParts.filter((part) => !part?.thought && typeof part?.text === "string")
+        .map((part) => part.text).join("").trim()
+    : "";
+  if (candidate?.finishReason !== "STOP" || !text) {
+    return Response.json({ error: "Gemini returned no complete answer", code: "INCOMPLETE_RESPONSE" }, { status: 502 });
   }
 
   console.log(`[${new Date().toISOString()}] Gemini ok | mode:${mode} | length:${text.length} | urlStatus:${urlStatus} | imageStatus:${imageStatus}`);

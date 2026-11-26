@@ -3,7 +3,7 @@ import "./App.css";
 import { buildDpepperPrompt } from "./lib/dpepperPrompt";
 import { encodeWithinBudget, PAYLOAD_TOO_LARGE } from "./lib/imageBudget";
 import { buildRecruitPrompt, classifyRecruit } from "./lib/recruitEngine";
-import { askGemini } from "./lib/geminiClient";
+import { askGemini, INCOMPLETE_RESPONSE } from "./lib/geminiClient";
 import { isValidEmail, normalizeEmail, MAX_EMAIL_LENGTH } from "./lib/contact";
 
 function withDaIs(text) {
@@ -264,7 +264,7 @@ function classifyConsult(text) {
 }
 
 function extractUrls(text) {
-  const matches = text.match(/https?:\/\/[^\s　、。！？「」（）［］]+/g) || [];
+  const matches = text.match(/https?:\/\/[^\s、。！？「」（）［］]+/g) || [];
   return matches
     .map((u) => u.replace(/[.,、。！？!?)）\]］>]+$/g, ""))
     .filter((u) => {
@@ -701,34 +701,14 @@ function App() {
             });
         const aiText = await askGemini(prompt, savedUrls, encodedImages, isRecruit ? "recruit" : "customer");
         if (requestId === aiRequestIdRef.current) {
-          const fallbackText = wasContinuing
-            ? isRecruit
-              ? "続きですね。書いていただいた内容をもとに整理します。見学前に気になることがあれば、続けて書いてみてください。"
-              : "続きですね。書いていただいた内容をもとに、もう少し整理してみます。気になる点や状態の変化があれば、続けて書いてみてください。"
-            : isRecruit
-              ? "見学前に確認したいこととして整理します。書いていただいた内容をもとに、見学や面談で確認しておくと安心なポイントをお伝えします。"
-              : currentEntry.id === "regular"
-                ? "こんにちは。ご相談の内容を拝見しました。気になっている状態や変化を、もう少し詳しく書いていただくと、整理しやすくなります。"
-                : "こんにちは、Da-isの髪と頭皮の相談所『Dペッパー』です。ご相談の内容を拝見しました。気になっている状態を、もう少し具体的に書いていただくと、整理しやすくなります。";
-          let cleaned = aiText
-            .replace(/^\s*#{1,6}\s*/gm, "")
-            .trim();
-          const hasMarkdown = /^\s*#{1,6}/m.test(cleaned);
-          const isComplete = cleaned.endsWith("。") || cleaned.endsWith("！") || cleaned.endsWith("？");
-          if (hasMarkdown || !isComplete) {
-            console.log("AI response fallback — hasMarkdown:", hasMarkdown, "isComplete:", isComplete);
-            cleaned = fallbackText;
-          }
-          console.log("Final AI response length:", cleaned.length);
-          console.log("Final AI response:", cleaned);
-          setAiResponse(cleaned);
-          setConsultations(prev => prev.map(c => c.id === newConsultId ? { ...c, aiResponse: cleaned } : c));
+          setAiResponse(aiText);
+          setConsultations(prev => prev.map(c => c.id === newConsultId ? { ...c, aiResponse: aiText } : c));
         }
       } catch (err) {
         if (requestId === aiRequestIdRef.current) {
           console.error("Gemini error:", err);
-          if (err?.code === PAYLOAD_TOO_LARGE) {
-            setAiError(PAYLOAD_TOO_LARGE);
+          if (err?.code === PAYLOAD_TOO_LARGE || err?.code === INCOMPLETE_RESPONSE) {
+            setAiError(err.code);
           } else if (isRecruit) {
             setAiError(err.message ?? "応答を取得できませんでした。");
           } else if (savedUrls.length > 0 || encodedImages.length > 0) {
@@ -795,21 +775,13 @@ function App() {
           });
       const aiText = await askGemini(prompt, retryUrls, retryImages, isRecruit ? "recruit" : "customer");
       if (requestId === aiRequestIdRef.current) {
-        let cleaned = aiText.replace(/^\s*#{1,6}\s*/gm, "").trim();
-        const hasMarkdown = /^\s*#{1,6}/m.test(cleaned);
-        const isComplete = cleaned.endsWith("。") || cleaned.endsWith("！") || cleaned.endsWith("？");
-        if (hasMarkdown || !isComplete) {
-          cleaned = isRecruit
-            ? "見学前に確認したいこととして整理します。書いていただいた内容をもとに、見学や面談で確認しておくと安心なポイントをお伝えします。"
-            : "こんにちは、Da-isの髪と頭皮の相談所『Dペッパー』です。ご相談の内容を拝見しました。気になっている状態を、もう少し具体的に書いていただくと、整理しやすくなります。";
-        }
-        setAiResponse(cleaned);
-        setConsultations(prev => prev.map(c => c.id === lastConsultationIdRef.current ? { ...c, aiResponse: cleaned } : c));
+        setAiResponse(aiText);
+        setConsultations(prev => prev.map(c => c.id === lastConsultationIdRef.current ? { ...c, aiResponse: aiText } : c));
       }
     } catch (err) {
       if (requestId === aiRequestIdRef.current) {
         console.error("Gemini retry error:", err);
-        setAiError(err?.code === PAYLOAD_TOO_LARGE ? PAYLOAD_TOO_LARGE : (err.message ?? "応答を取得できませんでした。"));
+        setAiError(err?.code ?? err.message ?? "応答を取得できませんでした。");
       }
     } finally {
       if (requestId === aiRequestIdRef.current) setAiLoading(false);
@@ -1238,7 +1210,7 @@ function App() {
                               </>
                             ) : (
                               <>
-                                <p>相談内容の整理中にうまく接続できませんでした。</p>
+                                <p>{aiError === INCOMPLETE_RESPONSE ? "返答を最後まで受け取れませんでした。" : "相談内容の整理中にうまく接続できませんでした。"}</p>
                                 <p>少し時間を置いてから、もう一度お試しください。相談内容を共有していただくと、<ruby>Da-is<rt>デイズ</rt></ruby>のお店側でも確認できます。</p>
                               </>
                             )}

@@ -1,6 +1,8 @@
 import { bodyByteLength, PAYLOAD_TOO_LARGE, REQUEST_LIMIT_BYTES } from "./imageBudget.js";
 import { MAX_URLS } from "./limits.js";
 
+export const INCOMPLETE_RESPONSE = "INCOMPLETE_RESPONSE";
+
 export async function askGemini(prompt, urls = [], images = [], mode = "customer") {
   console.log("Sending images count:", images?.length || 0);
   // URL欄と相談文中のURLを合わせると上限を超えることがあるため、サーバーの上限件数までに揃える
@@ -30,16 +32,21 @@ export async function askGemini(prompt, urls = [], images = [], mode = "customer
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
     const message = errBody?.error ?? "(no message)";
-    throw new Error(`Gemini API error: ${res.status} – ${message}`);
+    const error = new Error(`Gemini API error: ${res.status} – ${message}`);
+    error.code = errBody?.code;
+    throw error;
   }
 
   const data = await res.json();
 
-  if (!data.text) {
-    throw new Error("Gemini response has no text");
+  const text = data.text?.replace(/^\s*#{1,6}\s*/gm, "").trim();
+  if (!text) {
+    const error = new Error("Gemini response has no text");
+    error.code = INCOMPLETE_RESPONSE;
+    throw error;
   }
 
   console.log("AI response length:", data.text.length);
 
-  return data.text;
+  return text;
 }
